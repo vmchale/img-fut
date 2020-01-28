@@ -4,4 +4,4 @@ imgfut.py: img.fut
 	futhark pyopencl $< --library -o imgfut
 
 clean:
-	@rm -rf img img.c img.py
+	@rm -rf img img.c imgfut.py
