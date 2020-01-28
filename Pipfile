@@ -10,7 +10,6 @@ numpy = "*"
 imageio = "*"
 pyopencl = "*"
 matplotlib = "*"
-scikit-image = "*"
 
 [requires]
 python_version = "3"
