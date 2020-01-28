@@ -1,4 +1,4 @@
-module perceptual_hash (M: float) = {
+module image (M: float) = {
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
@@ -71,7 +71,7 @@ module perceptual_hash (M: float) = {
 
     convolve ker x
 
-  local let sobel [m][n] (x: [m][n]M.t) : [m][n]M.t =
+  let sobel [m][n] (x: [m][n]M.t) : [m][n]M.t =
     let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
                          , [ M.from_fraction (-2) 1, M.from_fraction 0 1, M.from_fraction 2 1 ]
                          , [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
@@ -92,3 +92,9 @@ module perceptual_hash (M: float) = {
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
 }
+
+module img_f32 = image f32
+module img_f64 = image f64
+
+entry sobel_f32 = img_f32.sobel
+entry sobel_f64 = img_f64.sobel
