@@ -63,10 +63,11 @@ module image (M: float) = {
         in
         sum2 (matmul ker surroundings))
 
-  let mean_filter [m][n] (ker_n: i32, x: [m][n]M.t) : [m][n]M.t =
+  let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
-    let ker_row = replicate ker_n x_in
-    let ker = replicate ker_n ker_row
+    let ker =
+      tabulate_2d ker_n ker_n
+        (\_ _ -> x_in)
     in
 
     convolve ker x
@@ -98,3 +99,6 @@ module img_f64 = image f64
 
 entry sobel_f32 = img_f32.sobel
 entry sobel_f64 = img_f64.sobel
+
+entry mean_filter_f32 = img_f32.mean_filter 7
+entry mean_filter_f64 = img_f64.mean_filter 7

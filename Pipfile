@@ -9,6 +9,7 @@ verify_ssl = true
 numpy = "*"
 imageio = "*"
 pyopencl = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3"
