@@ -1,5 +1,8 @@
 module perceptual_hash (M: float) = {
 
+  -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
+  -- image rotations + reflections (obviously)
+
   local import "lib/github.com/diku-dk/sorts/radix_sort"
 
   local let matmul [n][m][p] (x: [n][m]M.t) (y: [m][p]M.t) : [n][p]M.t =
@@ -19,7 +22,8 @@ module perceptual_hash (M: float) = {
       then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
       else sorted[n/2]
 
-  let mean_filter [m][n] (ker_n: i32, x: [m][n]M.t) : [m][n]M.t =
+  let convolve [m][n][p] (ker: [p][p]M.t, x: [m][n]M.t) : [m][n]M.t =
+    let ker_n = length ker
     let x_rows = length x
     let x_cols = length (head x)
 
@@ -45,8 +49,26 @@ module perceptual_hash (M: float) = {
                 else j - extended_n
           in unsafe (x[i'])[j'])
 
-    in extended
+    let window (row_start: i32) (col_start: i32) (row_end: i32) (col_end: i32) (x: [][]M.t) : [][]M.t =
+      map (\x_i -> x_i[col_start:col_end]) (x[row_start:row_end])
 
+    let sum2(mat: [][]M.t) : M.t =
+      M.sum (map (\x -> M.sum x) mat)
 
-  -- TODO: convolve
+    in
+
+    tabulate_2d x_rows x_cols
+      (\i j ->
+        let surroundings = window i j (i + ker_n) (j + ker_n) extended
+        in
+        sum2 (matmul ker surroundings))
+
+  let mean_filter [m][n] (ker_n: i32, x: [m][n]M.t) : [m][n]M.t =
+    let x_in = M.from_fraction 1 (ker_n * ker_n)
+    let ker_row = replicate ker_n x_in
+    let ker = replicate ker_n ker_row
+    in
+
+    convolve(ker, x)
+
 }
