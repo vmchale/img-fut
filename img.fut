@@ -22,7 +22,7 @@ module perceptual_hash (M: float) = {
       then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
       else sorted[n/2]
 
-  let convolve [m][n][p] (ker: [p][p]M.t, x: [m][n]M.t) : [m][n]M.t =
+  let convolve [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
     let ker_n = length ker
     let x_rows = length x
     let x_cols = length (head x)
@@ -69,6 +69,26 @@ module perceptual_hash (M: float) = {
     let ker = replicate ker_n ker_row
     in
 
-    convolve(ker, x)
+    convolve ker x
+
+  local let sobel [m][n] (x: [m][n]M.t) : [m][n]M.t =
+    let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
+                         , [ M.from_fraction (-2) 1, M.from_fraction 0 1, M.from_fraction 2 1 ]
+                         , [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
+                         ]
+
+    let g_y: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction (-2) 1, M.from_fraction (-1) 1 ]
+                         , [ M.from_fraction 0 1, M.from_fraction 0 1, M.from_fraction 0 1 ]
+                         , [ M.from_fraction 1 1, M.from_fraction 2 1, M.from_fraction 1 1 ]
+                         ]
+
+    let mag_intermed [m][n] (x: [m][n]M.t) (y: [m][n]M.t) : [m][n]M.t =
+      let rows = length x
+      let cols = length (head x)
+
+      in tabulate_2d rows cols
+        (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
+
+    in mag_intermed (convolve g_x x) (convolve g_y x)
 
 }
