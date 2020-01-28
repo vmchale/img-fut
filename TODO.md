@@ -6,3 +6,4 @@
     - [ ] Accelerate port of statistics?
 - [ ] https://pypi.org/project/futhark-ffi/
 - [ ] Signal processing library in Futhark?
+- [ ] Sobel in J? Maybe?
