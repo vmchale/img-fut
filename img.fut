@@ -20,10 +20,6 @@ module image (M: float) = {
     tabulate_2d m n
       (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
 
-  let refl_x (x: []M.t) : []M.t =
-    let l = length x
-    in tabulate l (\i -> x[l-i])
-
   local let median (x: []M.t) : M.t =
     let sort : []M.t -> []M.t =
       radix_sort_float M.num_bits M.get_bit
@@ -35,8 +31,7 @@ module image (M: float) = {
       then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
       else sorted[n/2]
 
-  -- FIXME: correlation vs. convolution?
-  let convolve [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
+  let correlate [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
     let ker_n = length ker
     let x_rows = length x
     let x_cols = length (head x)
@@ -84,6 +79,16 @@ module image (M: float) = {
         let surroundings = window i j (i + ker_n) (j + ker_n) extended
         in
         sum2 (overlay_ker ker surroundings))
+
+  let convolve [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
+    let flip [n] (x: [n][n]M.t) : [n][n]M.t =
+      let l = length x
+
+      in tabulate_2d l l
+        (\i j -> (x[l-i-1])[l-j-1])
+    in
+    correlate (flip ker) x
+
 
   let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
