@@ -5,3 +5,4 @@
   - [ ] `github.com/diku-dk/statistics` -> add?
     - [ ] Accelerate port of statistics?
 - [ ] https://pypi.org/project/futhark-ffi/
+- [ ] Signal processing library in Futhark?
