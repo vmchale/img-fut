@@ -72,6 +72,7 @@ module image (M: float) = {
 
     convolve ker x
 
+  -- TODO: sobel in J?
   let sobel [m][n] (x: [m][n]M.t) : [m][n]M.t =
     let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
                          , [ M.from_fraction (-2) 1, M.from_fraction 0 1, M.from_fraction 2 1 ]
