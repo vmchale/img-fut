@@ -87,8 +87,8 @@ module image (M: float) = {
       in tabulate_2d l l
         (\i j -> (x[l-i-1])[l-j-1])
     in
-    correlate (flip ker) x
 
+    correlate (flip ker) x
 
   let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
@@ -99,7 +99,6 @@ module image (M: float) = {
 
     convolve ker x
 
-  -- TODO: sobel in J?
   let sobel [m][n] (x: [m][n]M.t) : [m][n]M.t =
     let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
                          , [ M.from_fraction (-2) 1, M.from_fraction 0 1, M.from_fraction 2 1 ]
