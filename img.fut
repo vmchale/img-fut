@@ -119,6 +119,26 @@ module image (M: float) = {
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
+  let prewitt [m][n] (x: [m][n]M.t) : [m][n]M.t =
+    let g_x: [3][3]M.t = [ [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
+                         , [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
+                         , [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
+                         ]
+
+    let g_y: [3][3]M.t = [ [ M.from_fraction 1 1, M.from_fraction 1 1, M.from_fraction 1 1 ]
+                         , [ M.from_fraction 0 1, M.from_fraction 0 1, M.from_fraction 0 1 ]
+                         , [ M.from_fraction (-1) 1, M.from_fraction (-1) 1, M.from_fraction (-1) 1 ]
+                         ]
+
+    let mag_intermed [m][n] (x: [m][n]M.t) (y: [m][n]M.t) : [m][n]M.t =
+      let rows = length x
+      let cols = length (head x)
+
+      in tabulate_2d rows cols
+        (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
+
+    in mag_intermed (convolve g_x x) (convolve g_y x)
+
 }
 
 module img_f32 = image f32
@@ -126,6 +146,9 @@ module img_f64 = image f64
 
 entry sobel_f32 = img_f32.sobel
 entry sobel_f64 = img_f64.sobel
+
+entry prewitt_f32 = img_f32.prewitt
+entry prewitt_f64 = img_f64.prewitt
 
 entry mean_filter_f32 = img_f32.mean_filter 7
 entry mean_filter_f64 = img_f64.mean_filter 7
