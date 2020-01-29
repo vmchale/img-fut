@@ -20,6 +20,10 @@ module image (M: float) = {
     tabulate_2d m n
       (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
 
+  -- | Crop an image by ignoring the other bits
+  let crop [m][n] (i: i32) (j: i32) (x: [m][n]M.t) : [i][j]M.t =
+    map (\x_i -> x_i[:j]) (x[:i])
+
   local let median (x: []M.t) : M.t =
     let sort : []M.t -> []M.t =
       radix_sort_float M.num_bits M.get_bit
