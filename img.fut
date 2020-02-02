@@ -1,21 +1,5 @@
 -- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 
-module image_float (M: float) = {
-
-  local import "lib/github.com/diku-dk/sorts/radix_sort"
-
-  let median (x: []M.t) : M.t =
-    let sort : []M.t -> []M.t =
-      radix_sort_float M.num_bits M.get_bit
-    let sorted = sort x
-    let n = length x
-    in
-
-    if n % 2 == 0
-      then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
-      else sorted[n/2]
-
-}
 
 -- TODO: only need float for median...
 module image (M: real) = {
@@ -46,7 +30,7 @@ module image (M: real) = {
 
   -- TODO: maximum, minimum, median filter!
 
-  let correlate [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
+  let with_window [m][n][p] (ker: [p][p]M.t)(f: [p][p]M.t -> M.t)(x: [m][n]M.t) : [m][n]M.t =
     let ker_n = length ker
     let x_rows = length x
     let x_cols = length (head x)
@@ -76,6 +60,17 @@ module image (M: real) = {
     let window (row_start: i32) (col_start: i32) (row_end: i32) (col_end: i32) (x: [][]M.t) : [][]M.t =
       map (\x_i -> x_i[col_start:col_end]) (x[row_start:row_end])
 
+    in
+
+
+    tabulate_2d x_rows x_cols
+      (\i j ->
+        let surroundings = window i j (i + ker_n) (j + ker_n) extended
+        in
+        f surroundings)
+
+  let correlate [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
+
     let sum2(mat: [][]M.t) : M.t =
       M.sum (map (\x -> M.sum x) mat)
 
@@ -88,12 +83,7 @@ module image (M: real) = {
         (\i j -> (ker[i])[j] M.* (slice[i])[j])
 
     in
-
-    tabulate_2d x_rows x_cols
-      (\i j ->
-        let surroundings = window i j (i + ker_n) (j + ker_n) extended
-        in
-        sum2 (overlay_ker ker surroundings))
+    with_window ker (\window -> sum2 (overlay_ker ker window)) x
 
   let convolve [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
     let flip [n] (x: [n][n]M.t) : [n][n]M.t =
@@ -153,5 +143,23 @@ module image (M: real) = {
         (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
+
+}
+
+-- TODO: module types? figure out
+module image_float (M: float) = {
+
+  local import "lib/github.com/diku-dk/sorts/radix_sort"
+
+  local let median (x: []M.t) : M.t =
+    let sort : []M.t -> []M.t =
+      radix_sort_float M.num_bits M.get_bit
+    let sorted = sort x
+    let n = length x
+    in
+
+    if n % 2 == 0
+      then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
+      else sorted[n/2]
 
 }
