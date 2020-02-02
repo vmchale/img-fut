@@ -1,6 +1,6 @@
 .PHONY: clean
 
-imgfut.py: img.fut
+imgfut.py: img-py.fut img.fut
 	futhark pyopencl $< --library -o imgfut
 
 clean:

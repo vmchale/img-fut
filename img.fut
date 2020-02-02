@@ -1,11 +1,30 @@
-module image (M: float) = {
+-- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
+
+module image_float (M: float) = {
+
+  local import "lib/github.com/diku-dk/sorts/radix_sort"
+
+  let median (x: []M.t) : M.t =
+    let sort : []M.t -> []M.t =
+      radix_sort_float M.num_bits M.get_bit
+    let sorted = sort x
+    let n = length x
+    in
+
+    if n % 2 == 0
+      then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
+      else sorted[n/2]
+
+}
+
+-- TODO: only need float for median...
+module image (M: real) = {
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
 
-  local import "lib/github.com/diku-dk/sorts/radix_sort"
-
-  local let matmul [n][m][p] (x: [n][m]M.t) (y: [m][p]M.t) : [n][p]M.t =
+  -- | Linear transform of an image
+  let matmul [n][m][p] (x: [n][m]M.t) (y: [m][p]M.t) : [n][p]M.t =
     map (\x_i ->
           map (\y_j -> M.sum (map2 (M.*) x_i y_j))
               (transpose y))
@@ -24,16 +43,8 @@ module image (M: float) = {
   let crop [m][n] (i: i32) (j: i32) (x: [m][n]M.t) : [i][j]M.t =
     map (\x_i -> x_i[:j]) (x[:i])
 
-  local let median (x: []M.t) : M.t =
-    let sort : []M.t -> []M.t =
-      radix_sort_float M.num_bits M.get_bit
-    let sorted = sort x
-    let n = length x
-    in
 
-    if n % 2 == 0
-      then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
-      else sorted[n/2]
+  -- TODO: maximum, minimum, median filter!
 
   let correlate [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
     let ker_n = length ker
@@ -144,15 +155,3 @@ module image (M: float) = {
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
 }
-
-module img_f32 = image f32
-module img_f64 = image f64
-
-entry sobel_f32 = img_f32.sobel
-entry sobel_f64 = img_f64.sobel
-
-entry prewitt_f32 = img_f32.prewitt
-entry prewitt_f64 = img_f64.prewitt
-
-entry mean_filter_f32 = img_f32.mean_filter 7
-entry mean_filter_f64 = img_f64.mean_filter 7
