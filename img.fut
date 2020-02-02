@@ -27,11 +27,7 @@ module image (M: real) = {
   let crop [m][n] (i: i32) (j: i32) (x: [m][n]M.t) : [i][j]M.t =
     map (\x_i -> x_i[:j]) (x[:i])
 
-
-  -- TODO: maximum, minimum, median filter!
-
-  let with_window [m][n][p] (ker: [p][p]M.t)(f: [p][p]M.t -> M.t)(x: [m][n]M.t) : [m][n]M.t =
-    let ker_n = length ker
+  let with_window [m][n] (ker_n: i32)(f: [][]M.t -> M.t)(x: [m][n]M.t) : [m][n]M.t =
     let x_rows = length x
     let x_cols = length (head x)
 
@@ -62,14 +58,28 @@ module image (M: real) = {
 
     in
 
-
     tabulate_2d x_rows x_cols
       (\i j ->
         let surroundings = window i j (i + ker_n) (j + ker_n) extended
         in
         f surroundings)
 
+  -- FIXME: these seem to be slow
+  let maximum_filter [m][n] (sz: i32)(x: [m][n]M.t) : [m][n]M.t =
+    let maximum_2d [p] (x: [p][p]M.t) : M.t =
+      M.maximum (map M.maximum x)
+    in
+    with_window sz maximum_2d x
+
+  let minimum_filter [m][n] (sz: i32)(x: [m][n]M.t) : [m][n]M.t =
+    let minimum_2d [p] (x: [p][p]M.t) : M.t =
+      M.minimum (map M.minimum x)
+    in
+    with_window sz minimum_2d x
+
   let correlate [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
+
+    let ker_n = length (head ker)
 
     let sum2(mat: [][]M.t) : M.t =
       M.sum (map (\x -> M.sum x) mat)
@@ -83,7 +93,7 @@ module image (M: real) = {
         (\i j -> (ker[i])[j] M.* (slice[i])[j])
 
     in
-    with_window ker (\window -> sum2 (overlay_ker ker window)) x
+    with_window ker_n (\window -> sum2 (overlay_ker ker window)) x
 
   let convolve [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
     let flip [n] (x: [n][n]M.t) : [n][n]M.t =
