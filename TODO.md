@@ -6,4 +6,11 @@
     - [ ] Accelerate port of statistics?
 - [ ] https://pypi.org/project/futhark-ffi/
 - [ ] Signal processing library in Futhark?
-- [ ] Sobel in J? Maybe?
+  - [ ] https://github.com/facebookresearch/pyrobot
+- [ ] Sobel in J? Probably already out there
+# Testing
+- [ ] Make sure correlation/convolution does the right thing
+# Documentation
+- [ ] Release Python library?
+# Performance
+- [ ] Compare R: https://www.rdocumentation.org/packages/OpenImageR/versions/1.1.6/topics/uniform_filter
