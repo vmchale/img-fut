@@ -4,6 +4,9 @@ module type image_numeric = {
 
   type num
 
+  -- | Linear transform of a grayscale image
+  val matmul [m][n][p]: [n][m]num -> [m][p]num -> [n][p]num
+
   val with_window [m][n]: (k: i32) -> ([k][k]num -> num) -> [m][n]num -> [m][n]num
 
   val maximum_filter [m][n]: i32 -> [m][n]num -> [m][n]num
@@ -21,9 +24,6 @@ module type image_real = {
   include image_numeric
 
   type real
-
-  -- | Linear transform of a grayscale image
-  val matmul [m][n][p]: [n][m]real -> [m][p]real -> [n][p]real
 
   val correlate [m][n][p]: [p][p]real -> [m][n]real -> [m][n]real
 
@@ -104,6 +104,12 @@ module mk_image_numeric (M: numeric): (
   let minimum_filter (sz)(x) =
     with_window sz minimum_2d x
 
+  let matmul (x)(y) =
+    map (\x_i ->
+          map (\y_j -> M.sum (map2 (M.*) x_i y_j))
+              (transpose y))
+        x
+
 }
 
 module mk_image_real (M: real): (
@@ -120,6 +126,7 @@ module mk_image_real (M: real): (
   let minimum_filter = img_real.minimum_filter
   let maximum_2d = img_real.maximum_2d
   let minimum_2d = img_real.minimum_2d
+  let matmul = img_real.matmul
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
@@ -132,12 +139,6 @@ module mk_image_real (M: real): (
   -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
 
   -- https://github.com/diku-dk/fft for FFT stuff
-
-  let matmul (x)(y) =
-    map (\x_i ->
-          map (\y_j -> M.sum (map2 (M.*) x_i y_j))
-              (transpose y))
-        x
 
   let ez_resize (m)(n)(x) =
     let rows = length x
@@ -247,7 +248,7 @@ module mk_image_float (M: float): (
   local import "lib/github.com/diku-dk/sorts/radix_sort"
 
   -- TODO: there's probably a better way to do this...
-  let matmul = img_float.matmul
+  let matmul = img_numeric.matmul
   let correlate = img_float.correlate
   let convolve = img_float.convolve
   let sobel = img_float.sobel
