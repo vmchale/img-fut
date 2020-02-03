@@ -238,14 +238,15 @@ module mk_image_float (M: float): (
   image_float with float = M.t
   ) = {
 
+  local import "lib/github.com/diku-dk/statistics/statistics"
+
   module img_numeric = mk_image_numeric M
   module img_float = mk_image_real M
+  module statistics = mk_statistics M
 
   type num = M.t
   type real = M.t
   type float = M.t
-
-  local import "lib/github.com/diku-dk/sorts/radix_sort"
 
   -- TODO: there's probably a better way to do this...
   let matmul = img_numeric.matmul
@@ -260,16 +261,8 @@ module mk_image_float (M: float): (
   let maximum_2d = img_numeric.maximum_2d
   let minimum_2d = img_numeric.minimum_2d
 
-  local let median (x: []M.t) : M.t =
-    let sort : []M.t -> []M.t =
-      radix_sort_float M.num_bits M.get_bit
-    let sorted = sort x
-    let n = length x
-    in
-
-    if n % 2 == 0
-      then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
-      else sorted[n/2]
+  local let median =
+    statistics.median
 
   -- | This is kind of slow.
   let median_filter (n)(x) = with_window n (\arr -> median (flatten arr)) x

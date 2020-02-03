@@ -1,3 +1,4 @@
 require {
   github.com/diku-dk/sorts 0.3.10 #a9a16f410669a08684182e295ff66f48a085a6bc
+  github.com/diku-dk/statistics 0.1.6 #52a901f1a121effd8c4433009a164cc16808d39d
 }
