@@ -17,6 +17,10 @@ module type image_numeric = {
 
   val minimum_2d [m][n]: [m][n]num -> num
 
+  val correlate [m][n][p]: [p][p]num -> [m][n]num -> [m][n]num
+
+  val convolve [m][n][p]: [p][p]num -> [m][n]num -> [m][n]num
+
 }
 
 module type image_real = {
@@ -25,15 +29,11 @@ module type image_real = {
 
   type real
 
-  val correlate [m][n][p]: [p][p]real -> [m][n]real -> [m][n]real
-
-  val convolve [m][n][p]: [p][p]real -> [m][n]real -> [m][n]real
+  val mean_filter [m][n]: i32 -> [m][n]real -> [m][n]real
 
   val sobel [m][n]: [m][n]real -> [m][n]real
 
   val prewitt [m][n]: [m][n]real -> [m][n]real
-
-  val mean_filter [m][n]: i32 -> [m][n]real -> [m][n]real
 
 }
 
@@ -110,48 +110,6 @@ module mk_image_numeric (M: numeric): (
               (transpose y))
         x
 
-}
-
-module mk_image_real (M: real): (
-  image_real with real = M.t
-  ) = {
-
-  type num = M.t
-  type real = M.t
-
-  module img_real = mk_image_numeric M
-
-  let with_window = img_real.with_window
-  let maximum_filter = img_real.maximum_filter
-  let minimum_filter = img_real.minimum_filter
-  let maximum_2d = img_real.maximum_2d
-  let minimum_2d = img_real.minimum_2d
-  let matmul = img_real.matmul
-
-  -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
-  -- image rotations + reflections (obviously)
-
-  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
-  -- https://terpconnect.umd.edu/~toh/spectrum/FourierFilter.html
-  -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
-  -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
-
-  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
-
-  -- https://github.com/diku-dk/fft for FFT stuff
-
-  let ez_resize (m)(n)(x) =
-    let rows = length x
-    let cols = length (head x)
-    in
-
-    tabulate_2d m n
-      (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
-
-  -- | Crop an image by ignoring the other bits
-  let crop (i)(j)(x) =
-    map (\x_i -> x_i[:j]) (x[:i])
-
   let correlate (ker)(x) =
 
     let ker_n = length (head ker)
@@ -180,9 +138,38 @@ module mk_image_real (M: real): (
 
     correlate (flip ker) x
 
-  -- See for Gaussian: https://github.com/scipy/scipy/blob/master/scipy/ndimage/filters.py#L160
+  let ez_resize (m)(n)(x) =
+    let rows = length x
+    let cols = length (head x)
+    in
 
-  -- I think scipy calls this "uniform filter"
+    tabulate_2d m n
+      (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
+
+  -- | Crop an image by ignoring the other bits
+  let crop (i)(j)(x) =
+    map (\x_i -> x_i[:j]) (x[:i])
+
+}
+
+module mk_image_real (M: real): (
+  image_real with real = M.t
+  ) = {
+
+  type num = M.t
+  type real = M.t
+
+  module img_real = mk_image_numeric M
+
+  let with_window = img_real.with_window
+  let maximum_filter = img_real.maximum_filter
+  let minimum_filter = img_real.minimum_filter
+  let maximum_2d = img_real.maximum_2d
+  let minimum_2d = img_real.minimum_2d
+  let matmul = img_real.matmul
+  let convolve = img_real.convolve
+  let correlate = img_real.correlate
+
   let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
     let ker =
@@ -191,6 +178,20 @@ module mk_image_real (M: real): (
     in
 
     convolve ker x
+
+  -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
+  -- image rotations + reflections (obviously)
+
+  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
+  -- https://terpconnect.umd.edu/~toh/spectrum/FourierFilter.html
+  -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
+  -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
+
+  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
+
+  -- https://github.com/diku-dk/fft for FFT stuff
+
+  -- See for Gaussian: https://github.com/scipy/scipy/blob/master/scipy/ndimage/filters.py#L160
 
   let sobel (x) =
     let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
@@ -250,8 +251,8 @@ module mk_image_float (M: float): (
 
   -- TODO: there's probably a better way to do this...
   let matmul = img_numeric.matmul
-  let correlate = img_float.correlate
-  let convolve = img_float.convolve
+  let correlate = img_numeric.correlate
+  let convolve = img_numeric.convolve
   let sobel = img_float.sobel
   let prewitt = img_float.prewitt
   let mean_filter = img_float.mean_filter
