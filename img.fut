@@ -1,7 +1,24 @@
 -- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 
+module type image_numeric = {
 
-module type image = {
+  type num
+
+  val with_window [m][n]: (k: i32) -> ([k][k]num -> num) -> [m][n]num -> [m][n]num
+
+  val maximum_filter [m][n]: i32 -> [m][n]num -> [m][n]num
+
+  val minimum_filter [m][n]: i32 -> [m][n]num -> [m][n]num
+
+  val maximum_2d [m][n]: [m][n]num -> num
+
+  val minimum_2d [m][n]: [m][n]num -> num
+
+}
+
+module type image_real = {
+
+  include image_numeric
 
   type real
 
@@ -18,51 +35,24 @@ module type image = {
 
   val mean_filter [m][n]: i32 -> [m][n]real -> [m][n]real
 
-  val maximum_filter [m][n]: i32 -> [m][n]real -> [m][n]real
+}
 
-  val minimum_filter [m][n]: i32 -> [m][n]real -> [m][n]real
+module type image_float = {
 
-  val with_window [m][n]: (k: i32) -> ([k][k]real -> real) -> [m][n]real -> [m][n]real
+  include image_real
+
+  type float
+
+  -- | Median filter
+  val median_filter [m][n]: i32 -> [m][n]float -> [m][n]float
 
 }
 
--- FIXME: size of sobel/prewitt?
--- TODO: only need float for median...
-module mk_image (M: real): (
-  image with real = M.t
+module mk_image_numeric (M: numeric): (
+  image_numeric with num = M.t
   ) = {
 
-  type real = M.t
-
-  -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
-  -- image rotations + reflections (obviously)
-
-  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
-  -- https://terpconnect.umd.edu/~toh/spectrum/FourierFilter.html
-  -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
-  -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
-
-  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
-
-  -- https://github.com/diku-dk/fft for FFT stuff
-
-  let matmul [n][m][p] (x: [n][m]M.t) (y: [m][p]M.t) : [n][p]M.t =
-    map (\x_i ->
-          map (\y_j -> M.sum (map2 (M.*) x_i y_j))
-              (transpose y))
-        x
-
-  let ez_resize (m: i32) (n: i32) (x: [][]M.t) : [m][n]M.t =
-    let rows = length x
-    let cols = length (head x)
-    in
-
-    tabulate_2d m n
-      (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
-
-  -- | Crop an image by ignoring the other bits
-  let crop [m][n] (i: i32) (j: i32) (x: [m][n]M.t) : [i][j]M.t =
-    map (\x_i -> x_i[:j]) (x[:i])
+  type num = M.t
 
   let with_window (ker_n)(f)(x) =
     let x_rows = length x
@@ -101,20 +91,67 @@ module mk_image (M: real): (
         in
         f surroundings)
 
+  let maximum_2d (x) =
+    M.maximum (map M.maximum x)
+
+  let minimum_2d (x) =
+    M.minimum (map M.minimum x)
+
   -- FIXME: these seem to be slow
-  let maximum_filter [m][n] (sz: i32)(x: [m][n]M.t) : [m][n]M.t =
-    let maximum_2d [p] (x: [p][p]M.t) : M.t =
-      M.maximum (map M.maximum x)
-    in
+  let maximum_filter (sz)(x) =
     with_window sz maximum_2d x
 
-  let minimum_filter [m][n] (sz: i32)(x: [m][n]M.t) : [m][n]M.t =
-    let minimum_2d [p] (x: [p][p]M.t) : M.t =
-      M.minimum (map M.minimum x)
-    in
+  let minimum_filter (sz)(x) =
     with_window sz minimum_2d x
 
-  let correlate [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
+}
+
+module mk_image_real (M: real): (
+  image_real with real = M.t
+  ) = {
+
+  type num = M.t
+  type real = M.t
+
+  module img_real = mk_image_numeric M
+
+  let with_window = img_real.with_window
+  let maximum_filter = img_real.maximum_filter
+  let minimum_filter = img_real.minimum_filter
+  let maximum_2d = img_real.maximum_2d
+  let minimum_2d = img_real.minimum_2d
+
+  -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
+  -- image rotations + reflections (obviously)
+
+  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
+  -- https://terpconnect.umd.edu/~toh/spectrum/FourierFilter.html
+  -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
+  -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
+
+  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
+
+  -- https://github.com/diku-dk/fft for FFT stuff
+
+  let matmul (x)(y) =
+    map (\x_i ->
+          map (\y_j -> M.sum (map2 (M.*) x_i y_j))
+              (transpose y))
+        x
+
+  let ez_resize (m)(n)(x) =
+    let rows = length x
+    let cols = length (head x)
+    in
+
+    tabulate_2d m n
+      (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
+
+  -- | Crop an image by ignoring the other bits
+  let crop (i)(j)(x) =
+    map (\x_i -> x_i[:j]) (x[:i])
+
+  let correlate (ker)(x) =
 
     let ker_n = length (head ker)
 
@@ -132,7 +169,7 @@ module mk_image (M: real): (
     in
     with_window ker_n (\window -> sum2 (overlay_ker ker window)) x
 
-  let convolve [m][n][p] (ker: [p][p]M.t)(x: [m][n]M.t) : [m][n]M.t =
+  let convolve (ker)(x) =
     let flip [n] (x: [n][n]M.t) : [n][n]M.t =
       let l = length x
 
@@ -154,7 +191,7 @@ module mk_image (M: real): (
 
     convolve ker x
 
-  let sobel [m][n] (x: [m][n]M.t) : [m][n]M.t =
+  let sobel (x) =
     let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
                          , [ M.from_fraction (-2) 1, M.from_fraction 0 1, M.from_fraction 2 1 ]
                          , [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
@@ -174,7 +211,7 @@ module mk_image (M: real): (
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
-  let prewitt [m][n] (x: [m][n]M.t) : [m][n]M.t =
+  let prewitt (x) =
     let g_x: [3][3]M.t = [ [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
                          , [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
                          , [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
@@ -196,24 +233,14 @@ module mk_image (M: real): (
 
 }
 
-module type image_float = {
-
-  include image
-
-  type float
-
-  -- | Median filter
-  val median_filter [m][n]: i32 -> [m][n]float -> [m][n]float
-
-}
-
-
 module mk_image_float (M: float): (
   image_float with float = M.t
   ) = {
 
-  module img_float = mk_image M
+  module img_numeric = mk_image_numeric M
+  module img_float = mk_image_real M
 
+  type num = M.t
   type real = M.t
   type float = M.t
 
@@ -226,9 +253,11 @@ module mk_image_float (M: float): (
   let sobel = img_float.sobel
   let prewitt = img_float.prewitt
   let mean_filter = img_float.mean_filter
-  let maximum_filter = img_float.maximum_filter
-  let minimum_filter = img_float.minimum_filter
-  let with_window = img_float.with_window
+  let maximum_filter = img_numeric.maximum_filter
+  let minimum_filter = img_numeric.minimum_filter
+  let with_window = img_numeric.with_window
+  let maximum_2d = img_numeric.maximum_2d
+  let minimum_2d = img_numeric.minimum_2d
 
   local let median (x: []M.t) : M.t =
     let sort : []M.t -> []M.t =

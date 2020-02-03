@@ -1,7 +1,7 @@
 import "img"
 
-module img_f32 = mk_image f32
-module img_f64 = mk_image f64
+module img_f32 = mk_image_real f32
+module img_f64 = mk_image_real f64
 
 entry sobel_f32 = img_f32.sobel
 -- entry sobel_f64 = img_f64.sobel
