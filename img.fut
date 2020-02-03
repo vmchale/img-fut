@@ -1,8 +1,32 @@
 -- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 
 
+module type image = {
+
+  type real
+
+  -- | Linear transform of a grayscale image
+  val matmul [m][n][p]: [n][m]real -> [m][p]real -> [n][p]real
+
+  val correlate [m][n][p]: [p][p]real -> [m][n]real -> [m][n]real
+
+  val convolve [m][n][p]: [p][p]real -> [m][n]real -> [m][n]real
+
+  val sobel [m][n]: [m][n]real -> [m][n]real
+
+  val prewitt [m][n]: [m][n]real -> [m][n]real
+
+  val mean_filter [m][n]: i32 -> [m][n]real -> [m][n]real
+
+}
+
+-- FIXME: size of sobel/prewitt?
 -- TODO: only need float for median...
-module image (M: real) = {
+module mk_image (M: real): {
+  include image with real = M.t
+  } = {
+
+  type real = M.t
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
@@ -12,14 +36,16 @@ module image (M: real) = {
   -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
   -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
 
-  -- | Linear transform of an image
+  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
+
+  -- https://github.com/diku-dk/fft for FFT stuff
+
   let matmul [n][m][p] (x: [n][m]M.t) (y: [m][p]M.t) : [n][p]M.t =
     map (\x_i ->
           map (\y_j -> M.sum (map2 (M.*) x_i y_j))
               (transpose y))
         x
 
-  -- | Throw away a bunch of points so it's the right size.
   let ez_resize (m: i32) (n: i32) (x: [][]M.t) : [m][n]M.t =
     let rows = length x
     let cols = length (head x)
@@ -110,7 +136,9 @@ module image (M: real) = {
 
     correlate (flip ker) x
 
-  -- I think scipy calls this "mean filter"
+  -- See for Gaussian: https://github.com/scipy/scipy/blob/master/scipy/ndimage/filters.py#L160
+
+  -- I think scipy calls this "uniform filter"
   let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
     let ker =
@@ -159,6 +187,15 @@ module image (M: real) = {
         (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
+
+}
+
+module type image_float = {
+
+  type float
+
+  -- | Median filter
+  val median_filter [m][n]: (i32) -> [m][n]float -> [m][n]float
 
 }
 
