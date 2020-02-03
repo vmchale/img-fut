@@ -8,6 +8,9 @@
 - [ ] Signal processing library in Futhark?
   - [ ] https://github.com/facebookresearch/pyrobot
 - [ ] Sobel in J? Probably already out there
+- [ ] https://github.com/diku-dk/lys
+# Features
+- [ ] Gaussian blur
 # Testing
 - [ ] Make sure correlation/convolution does the right thing
 # Documentation
