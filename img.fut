@@ -7,6 +7,11 @@ module image (M: real) = {
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
 
+  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
+  -- https://terpconnect.umd.edu/~toh/spectrum/FourierFilter.html
+  -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
+  -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
+
   -- | Linear transform of an image
   let matmul [n][m][p] (x: [n][m]M.t) (y: [m][p]M.t) : [n][p]M.t =
     map (\x_i ->
@@ -105,6 +110,7 @@ module image (M: real) = {
 
     correlate (flip ker) x
 
+  -- I think scipy calls this "mean filter"
   let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
     let ker =
