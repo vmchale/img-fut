@@ -18,13 +18,19 @@ module type image = {
 
   val mean_filter [m][n]: i32 -> [m][n]real -> [m][n]real
 
+  val maximum_filter [m][n]: i32 -> [m][n]real -> [m][n]real
+
+  val minimum_filter [m][n]: i32 -> [m][n]real -> [m][n]real
+
+  val with_window [m][n]: (k: i32) -> ([k][k]real -> real) -> [m][n]real -> [m][n]real
+
 }
 
 -- FIXME: size of sobel/prewitt?
 -- TODO: only need float for median...
-module mk_image (M: real): {
-  include image with real = M.t
-  } = {
+module mk_image (M: real): (
+  image with real = M.t
+  ) = {
 
   type real = M.t
 
@@ -58,7 +64,7 @@ module mk_image (M: real): {
   let crop [m][n] (i: i32) (j: i32) (x: [m][n]M.t) : [i][j]M.t =
     map (\x_i -> x_i[:j]) (x[:i])
 
-  let with_window [m][n] (ker_n: i32)(f: [][]M.t -> M.t)(x: [m][n]M.t) : [m][n]M.t =
+  let with_window (ker_n)(f)(x) =
     let x_rows = length x
     let x_cols = length (head x)
 
@@ -192,17 +198,37 @@ module mk_image (M: real): {
 
 module type image_float = {
 
+  include image
+
   type float
 
   -- | Median filter
-  val median_filter [m][n]: (i32) -> [m][n]float -> [m][n]float
+  val median_filter [m][n]: i32 -> [m][n]float -> [m][n]float
 
 }
 
--- TODO: module types? figure out
-module image_float (M: float) = {
+
+module mk_image_float (M: float): (
+  image_float with float = M.t
+  ) = {
+
+  module img_float = mk_image M
+
+  type real = M.t
+  type float = M.t
 
   local import "lib/github.com/diku-dk/sorts/radix_sort"
+
+  -- TODO: there's probably a better way to do this...
+  let matmul = img_float.matmul
+  let correlate = img_float.correlate
+  let convolve = img_float.convolve
+  let sobel = img_float.sobel
+  let prewitt = img_float.prewitt
+  let mean_filter = img_float.mean_filter
+  let maximum_filter = img_float.maximum_filter
+  let minimum_filter = img_float.minimum_filter
+  let with_window = img_float.with_window
 
   local let median (x: []M.t) : M.t =
     let sort : []M.t -> []M.t =
@@ -214,5 +240,8 @@ module image_float (M: float) = {
     if n % 2 == 0
       then (sorted[n/2 - 1] M.+ sorted[n/2]) M./ (M.from_fraction 2 1)
       else sorted[n/2]
+
+  -- | This is kind of slow.
+  let median_filter (n)(x) = with_window n (\arr -> median (flatten arr)) x
 
 }
