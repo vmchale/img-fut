@@ -9,6 +9,7 @@
   - [ ] https://github.com/facebookresearch/pyrobot
 - [ ] Sobel in J? Probably already out there
 - [ ] https://github.com/diku-dk/lys
+- [ ] lol R https://github.com/wishkerman/DiaOutline
 # Features
 - [ ] Gaussian blur
 # Testing
