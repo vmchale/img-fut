@@ -153,7 +153,6 @@ module mk_image_numeric (M: numeric): (
     tabulate_2d m n
       (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
 
-  -- | Crop an image by ignoring the other bits
   let crop (i)(j)(x) =
     map (\x_i -> x_i[:j]) (x[:i])
 
