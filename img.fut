@@ -19,7 +19,7 @@ module type image_numeric = {
 
   val correlate [m][n][p]: [p][p]num -> [m][n]num -> [m][n]num
 
-  -- | Kernel must be a square matrix
+  -- | Kernel must be a square matrix; `p` must be odd.
   val convolve [m][n][p]: [p][p]num -> [m][n]num -> [m][n]num
 
 }
