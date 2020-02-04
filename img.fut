@@ -286,10 +286,7 @@ module mk_image_float (M: float): (
       (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
       -- also look at: https://github.com/scipy/scipy/blob/adc4f4f7bab120ccfab9383aba272954a0a12fb0/scipy/ndimage/filters.py#L136
 
-  local let median =
-    statistics.median
-
   -- | This is kind of slow.
-  let median_filter (n)(x) = with_window n (\arr -> median (flatten arr)) x
+  let median_filter (n)(x) = with_window n (\arr -> statistics.median (flatten arr)) x
 
 }
