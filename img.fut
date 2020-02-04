@@ -9,6 +9,12 @@ module type image_numeric = {
 
   val with_window [m][n]: (k: i32) -> ([k][k]num -> num) -> [m][n]num -> [m][n]num
 
+  -- | This just throws away some pixels; it does not do any interpolation
+  val ez_resize [m][n]: (k: i32) -> (l: i32) -> [m][n]num -> [k][l]num
+
+  -- | This performs no interpolation; it simply throws away pixels
+  val crop [m][n]: (k: i32) -> (l: i32) -> [m][n]num -> [k][l]num
+
   val maximum_filter [m][n]: i32 -> [m][n]num -> [m][n]num
 
   val minimum_filter [m][n]: i32 -> [m][n]num -> [m][n]num
@@ -170,6 +176,8 @@ module mk_image_real (M: real): (
   let matmul = img_real.matmul
   let convolve = img_real.convolve
   let correlate = img_real.correlate
+  let ez_resize = img_real.ez_resize
+  let crop = img_real.crop
 
   let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
@@ -187,6 +195,8 @@ module mk_image_real (M: real): (
   -- https://terpconnect.umd.edu/~toh/spectrum/FourierFilter.html
   -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
   -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
+
+  -- https://reinvantveer.github.io/2019/07/12/elliptical_fourier_analysis.html
 
   -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
 
@@ -262,6 +272,8 @@ module mk_image_float (M: float): (
   let with_window = img_numeric.with_window
   let maximum_2d = img_numeric.maximum_2d
   let minimum_2d = img_numeric.minimum_2d
+  let ez_resize = img_numeric.ez_resize
+  let crop = img_numeric.crop
 
   local let median =
     statistics.median
