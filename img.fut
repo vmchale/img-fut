@@ -64,10 +64,7 @@ module mk_image_numeric (M: numeric): (
 
   type num = M.t
 
-  let with_window (ker_n)(f)(x) =
-    let x_rows = length x
-    let x_cols = length (head x)
-
+  let with_window [x_rows][x_cols] (ker_n)(f)(x: [x_rows][x_cols]M.t) =
     let extended_n = ker_n / 2
 
     -- extend it at the edges
@@ -91,13 +88,15 @@ module mk_image_numeric (M: numeric): (
           in unsafe (x[i'])[j'])
 
     let window (row_start: i32) (col_start: i32) (row_end: i32) (col_end: i32) (x: [][]M.t) : [][]M.t =
-      map (\x_i -> x_i[col_start:col_end]) (x[row_start:row_end])
+      let ncols = col_end-col_start
+      in map (\x_i -> x_i[col_start:col_end] :> [ncols]M.t) (x[row_start:row_end])
 
     in
 
     tabulate_2d x_rows x_cols
       (\i j ->
-        let surroundings = window i j (i + ker_n) (j + ker_n) extended
+         let surroundings = window i j (i + ker_n) (j + ker_n) extended
+                            :> [ker_n][ker_n]M.t
         in
         f surroundings)
 
@@ -120,30 +119,21 @@ module mk_image_numeric (M: numeric): (
               (transpose y))
         x
 
-  let correlate (ker)(x) =
-
-    let ker_n = length (head ker)
+  let correlate [ker_n] (ker: [][ker_n]M.t) (x) =
 
     let sum2(mat: [][]M.t) : M.t =
       M.sum (map (\x -> M.sum x) mat)
 
     let overlay_ker [n] (ker: [n][n]M.t) (slice: [n][n]M.t) : [n][n]M.t =
-      let dim_x = length slice
-      let dim_y = length (head slice)
-      in
-
-      tabulate_2d dim_x dim_y
+      tabulate_2d n n
         (\i j -> (ker[i])[j] M.* (slice[i])[j])
 
     in
     with_window ker_n (\window -> sum2 (overlay_ker ker window)) x
 
-  let convolve (ker)(x) =
-    let flip [n] (x: [n][n]M.t) : [n][n]M.t =
-      let l = length x
-
-      in tabulate_2d l l
-        (\i j -> (x[l-i-1])[l-j-1])
+  let convolve [m][n][p] (ker: [p][p]M.t) (x: [m][n]M.t) =
+    let flip x =
+      tabulate_2d p p (\i j -> (x[p-i-1])[p-j-1])
     in
 
     correlate (flip ker) x
@@ -218,10 +208,7 @@ module mk_image_real (M: real): (
                          ]
 
     let mag_intermed [m][n] (x: [m][n]M.t) (y: [m][n]M.t) : [m][n]M.t =
-      let rows = length x
-      let cols = length (head x)
-
-      in tabulate_2d rows cols
+      tabulate_2d m n
         (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
@@ -238,10 +225,7 @@ module mk_image_real (M: real): (
                          ]
 
     let mag_intermed [m][n] (x: [m][n]M.t) (y: [m][n]M.t) : [m][n]M.t =
-      let rows = length x
-      let cols = length (head x)
-
-      in tabulate_2d rows cols
+      tabulate_2d m n
         (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
