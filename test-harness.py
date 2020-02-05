@@ -15,5 +15,5 @@ blur_img0 = mod.mean_filter_f32(img0)
 print ("done processing...")
 
 plt.gray()
-plt.imshow(edges_img0)
+plt.imshow(edges_img0.get())
 plt.show()
