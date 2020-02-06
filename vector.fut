@@ -11,6 +11,7 @@ module type field = {
 
 }
 
+-- we only really care about real/complex vector spaces...
 module type vector = {
 
   include field
