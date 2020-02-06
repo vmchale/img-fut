@@ -1,5 +1,10 @@
 -- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 
+-- other image types?
+-- [3]u8
+--
+-- module type for vector spaces?
+
 module type image_numeric = {
 
   type num

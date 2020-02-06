@@ -8,6 +8,7 @@
 - [ ] https://github.com/diku-dk/lys
 - [ ] lol R https://github.com/wishkerman/DiaOutline
 - [ ] http://www.mif.vu.lt/atpazinimas/dip/FIP/fip-Smoothin.html
+- [ ] ATS + Futhark for statistics?
 # Features
 - [ ] Gaussian blur
 - [ ] Image types besides `Float`/`Double`
