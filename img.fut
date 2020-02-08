@@ -63,6 +63,9 @@ module type image_float = {
 
 }
 
+-- TODO: pixel type
+-- Look at colour-accelerate?
+
 module mk_image_numeric (M: numeric): (
   image_numeric with num = M.t
   ) = {
@@ -105,18 +108,18 @@ module mk_image_numeric (M: numeric): (
         in
         f surroundings)
 
-  let maximum_2d (x) =
-    M.maximum (map M.maximum x)
+  let maximum_2d =
+    M.maximum <-< map M.maximum
 
-  let minimum_2d (x) =
-    M.minimum (map M.minimum x)
+  let minimum_2d =
+    M.minimum <-< map M.minimum
 
   -- FIXME: these seem to be slow
-  let maximum_filter (sz)(x) =
-    with_window sz maximum_2d x
+  let maximum_filter (sz) =
+    with_window sz maximum_2d
 
-  let minimum_filter (sz)(x) =
-    with_window sz minimum_2d x
+  let minimum_filter (sz) =
+    with_window sz minimum_2d
 
   let matmul (x)(y) =
     map (\x_i ->
@@ -124,7 +127,7 @@ module mk_image_numeric (M: numeric): (
               (transpose y))
         x
 
-  let correlate [ker_n] (ker: [][ker_n]M.t) (x) =
+  let correlate [ker_n] (ker: [][ker_n]M.t) =
 
     let sum2(mat: [][]M.t) : M.t =
       M.sum (map (\x -> M.sum x) mat)
@@ -134,14 +137,14 @@ module mk_image_numeric (M: numeric): (
         (\i j -> (ker[i])[j] M.* (slice[i])[j])
 
     in
-    with_window ker_n (\window -> sum2 (overlay_ker ker window)) x
+    with_window ker_n (\window -> sum2 (overlay_ker ker window))
 
-  let convolve [m][n][p] (ker: [p][p]M.t) (x: [m][n]M.t) =
+  let convolve [p] (ker: [p][p]M.t) =
     let flip x =
       tabulate_2d p p (\i j -> (x[p-i-1])[p-j-1])
     in
 
-    correlate (flip ker) x
+    correlate (flip ker)
 
   let ez_resize (m)(n)(x) =
     let rows = length x
@@ -176,14 +179,14 @@ module mk_image_real (M: real): (
   let ez_resize = img_real.ez_resize
   let crop = img_real.crop
 
-  let mean_filter [m][n] (ker_n: i32) (x: [m][n]M.t) : [m][n]M.t =
+  let mean_filter (ker_n) =
     let x_in = M.from_fraction 1 (ker_n * ker_n)
     let ker =
       tabulate_2d ker_n ker_n
         (\_ _ -> x_in)
     in
 
-    convolve ker x
+    convolve ker
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
@@ -276,6 +279,6 @@ module mk_image_float (M: float): (
       -- also look at: https://github.com/scipy/scipy/blob/adc4f4f7bab120ccfab9383aba272954a0a12fb0/scipy/ndimage/filters.py#L136
 
   -- | This is kind of slow.
-  let median_filter (n)(x) = with_window n (\arr -> statistics.median (flatten arr)) x
+  let median_filter (n) = with_window n (statistics.median <-< flatten)
 
 }
