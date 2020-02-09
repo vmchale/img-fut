@@ -48,7 +48,7 @@ module type image_real = {
 
   val prewitt [m][n]: [m][n]real -> [m][n]real
 
-  -- | 2-D Gaussian blur
+  -- | 2-D Gaussian blur. The first argument is the standard deviation. The first argument is the standard deviation.
   val gaussian [m][n]: real -> [m][n]real -> [m][n]real
 
 }
@@ -260,6 +260,7 @@ module mk_image_real (M: real): (
         let j' = M.from_fraction ((j - 1)/2) 1
         in g_gaussian sigma i' j')
 
+  -- TODO: scale kernel
   let gaussian(sigma) =
     correlate (g_kernel sigma)
 
