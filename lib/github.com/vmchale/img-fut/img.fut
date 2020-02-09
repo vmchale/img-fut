@@ -53,6 +53,14 @@ module type image_real = {
   -- See lecture notes [here](https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf)
   val gaussian [m][n]: (sigma: real) -> [m][n]real -> [m][n]real
 
+  -- | Laplacian filter approximated by a 3x3 fiter.
+  --
+  -- See [this page](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm).
+  val laplacian [m][n]: [m][n]real -> [m][n]real
+
+  -- -- | See [here](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm) for reference.
+  -- val laplacian_of_gaussian [m][n]: (sigma: real) -> [m][n]real -> [m][n]real
+
 }
 
 module type image_float = {
@@ -222,6 +230,13 @@ module mk_image_real (M: real): (
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
+  let laplacian =
+    let ker: [3][3]M.t = [ [ M.from_fraction 0 1, M.from_fraction (-1) 1, M.from_fraction 0 1 ]
+                         , [ M.from_fraction (-1) 1, M.from_fraction 4 1, M.from_fraction (-1) 1 ]
+                         , [ M.from_fraction 0 1, M.from_fraction (-1) 1, M.from_fraction 0 1 ]
+                         ]
+    in correlate ker
+
   let prewitt (x) =
     let g_x: [3][3]M.t = [ [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
                          , [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
@@ -259,6 +274,7 @@ module mk_image_real (M: real): (
       let pre_ker =
         tabulate_2d dim dim
           (\i j ->
+            -- TODO: is this right?
             let i' = M.from_fraction ((i - 1)/2) 1
             let j' = M.from_fraction ((j - 1)/2) 1
             in g_gaussian sigma i' j')
@@ -301,6 +317,7 @@ module mk_image_float (M: float): (
   let ez_resize = img_numeric.ez_resize
   let crop = img_numeric.crop
   let gaussian = img_float.gaussian
+  let laplacian = img_float.laplacian
 
   -- | This is kind of slow.
   let median_filter (n) =
