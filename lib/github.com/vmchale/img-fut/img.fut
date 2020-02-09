@@ -241,6 +241,10 @@ module mk_image_real (M: real): (
 
   -- TODO: scale kernel
   let gaussian(sigma) =
+    let scale_2d (x) =
+      let tot = M.sum (flatten x)
+        in map (\x_row -> map (M./ tot) x_row) x
+
     let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
       let one = M.from_fraction 1 1
       let two = M.from_fraction 2 1
@@ -252,13 +256,16 @@ module mk_image_real (M: real): (
       let three = M.from_fraction 3 1
       let radius = i32.max 1 (M.to_i32 (three M.* sigma))
       let dim = 2 * radius + 1
+      let pre_ker =
+        tabulate_2d dim dim
+          (\i j ->
+            let i' = M.from_fraction ((i - 1)/2) 1
+            let j' = M.from_fraction ((j - 1)/2) 1
+            in g_gaussian sigma i' j')
       in
 
-      tabulate_2d dim dim
-        (\i j ->
-          let i' = M.from_fraction ((i - 1)/2) 1
-          let j' = M.from_fraction ((j - 1)/2) 1
-          in g_gaussian sigma i' j')
+      scale_2d(pre_ker)
+
     in
 
     correlate (g_kernel sigma)
