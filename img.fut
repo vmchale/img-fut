@@ -48,11 +48,10 @@ module type image_real = {
 
   val prewitt [m][n]: [m][n]real -> [m][n]real
 
-  -- | 2-D Gaussian blur. The first argument is the standard deviation. The first argument is the standard deviation.
+  -- | 2-D Gaussian blur. The first argument `sigma` is the standard deviation.
   --
   -- See lecture notes [here](https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf)
-
-  val gaussian [m][n]: real -> [m][n]real -> [m][n]real
+  val gaussian [m][n]: (sigma: real) -> [m][n]real -> [m][n]real
 
 }
 

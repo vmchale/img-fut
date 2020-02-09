@@ -1,5 +1,6 @@
 - [ ] See: https://docs.scipy.org/doc/scipy/reference/ndimage.html
 - [ ] Replace fft? https://docs.scipy.org/doc/scipy/reference/tutorial/fft.html
+  - [ ] lol replace half of SciPy
   - [ ] Signal processing https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html
 - [ ] https://pypi.org/project/futhark-ffi/
 - [ ] Signal processing library in Futhark?
