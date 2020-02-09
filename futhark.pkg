@@ -1,3 +1,5 @@
+package github.com/vmchale/img-fut
+
 require {
   github.com/diku-dk/statistics 0.1.6 #52a901f1a121effd8c4433009a164cc16808d39d
 }

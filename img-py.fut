@@ -1,4 +1,4 @@
-import "img"
+import "lib/github.com/vmchale/img-fut/img"
 
 module img_f32 = mk_image_real f32
 module img_f64 = mk_image_real f64

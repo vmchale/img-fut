@@ -269,7 +269,7 @@ module mk_image_float (M: float): (
   image_float with float = M.t
   ) = {
 
-  local import "lib/github.com/diku-dk/statistics/statistics"
+  local import "../../diku-dk/statistics/statistics"
 
   module img_numeric = mk_image_numeric M
   module img_float = mk_image_real M
