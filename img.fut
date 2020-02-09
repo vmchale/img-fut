@@ -48,7 +48,8 @@ module type image_real = {
 
   val prewitt [m][n]: [m][n]real -> [m][n]real
 
-  -- TODO: gaussian filter!! -> gaussian "stencil" for a given sigma
+  -- | 2-D Gaussian blur
+  val gaussian [m][n]: real -> [m][n]real -> [m][n]real
 
 }
 
@@ -238,6 +239,30 @@ module mk_image_real (M: real): (
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
+  -- see: https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf
+
+  local let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
+    let one = M.from_fraction 1 1
+    let two = M.from_fraction 2 1
+
+    in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
+      (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
+
+  local let g_kernel (sigma: M.t): [][]M.t =
+    let three = M.from_fraction 3 1
+    let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+    let dim = 2 * radius + 1
+    in
+
+    tabulate_2d dim dim
+      (\i j ->
+        let i' = M.from_fraction ((i - 1)/2) 1
+        let j' = M.from_fraction ((j - 1)/2) 1
+        in g_gaussian sigma i' j')
+
+  let gaussian(sigma) =
+    correlate (g_kernel sigma)
+
 }
 
 module mk_image_float (M: float): (
@@ -268,17 +293,10 @@ module mk_image_float (M: float): (
   let minimum_2d = img_numeric.minimum_2d
   let ez_resize = img_numeric.ez_resize
   let crop = img_numeric.crop
-
-  -- see: https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf
-  local let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
-    let one = M.from_fraction 1 1
-    let two = M.from_fraction 2 1
-
-    in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
-      (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
-      -- also look at: https://github.com/scipy/scipy/blob/adc4f4f7bab120ccfab9383aba272954a0a12fb0/scipy/ndimage/filters.py#L136
+  let gaussian = img_float.gaussian
 
   -- | This is kind of slow.
-  let median_filter (n) = with_window n (statistics.median <-< flatten)
+  let median_filter (n) =
+    with_window n (statistics.median <-< flatten)
 
 }

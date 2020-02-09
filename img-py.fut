@@ -11,3 +11,6 @@ entry prewitt_f64 = img_f64.prewitt
 
 entry mean_filter_f32 = img_f32.mean_filter 7
 entry mean_filter_f64 = img_f64.mean_filter 7
+
+entry gaussian_filter_f32 = img_f32.gaussian 3
+entry gaussian_filter_f64 = img_f64.gaussian 3
