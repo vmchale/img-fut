@@ -239,27 +239,28 @@ module mk_image_real (M: real): (
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
-  local let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
-    let one = M.from_fraction 1 1
-    let two = M.from_fraction 2 1
-
-    in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
-      (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
-
-  local let g_kernel (sigma: M.t): [][]M.t =
-    let three = M.from_fraction 3 1
-    let radius = i32.max 1 (M.to_i32 (three M.* sigma))
-    let dim = 2 * radius + 1
-    in
-
-    tabulate_2d dim dim
-      (\i j ->
-        let i' = M.from_fraction ((i - 1)/2) 1
-        let j' = M.from_fraction ((j - 1)/2) 1
-        in g_gaussian sigma i' j')
-
   -- TODO: scale kernel
   let gaussian(sigma) =
+    let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
+      let one = M.from_fraction 1 1
+      let two = M.from_fraction 2 1
+
+      in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
+        (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
+
+    let g_kernel (sigma: M.t): [][]M.t =
+      let three = M.from_fraction 3 1
+      let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+      let dim = 2 * radius + 1
+      in
+
+      tabulate_2d dim dim
+        (\i j ->
+          let i' = M.from_fraction ((i - 1)/2) 1
+          let j' = M.from_fraction ((j - 1)/2) 1
+          in g_gaussian sigma i' j')
+    in
+
     correlate (g_kernel sigma)
 
 }
