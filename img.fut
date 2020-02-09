@@ -49,6 +49,9 @@ module type image_real = {
   val prewitt [m][n]: [m][n]real -> [m][n]real
 
   -- | 2-D Gaussian blur. The first argument is the standard deviation. The first argument is the standard deviation.
+  --
+  -- See lecture notes [here](https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf)
+
   val gaussian [m][n]: real -> [m][n]real -> [m][n]real
 
 }
@@ -203,8 +206,6 @@ module mk_image_real (M: real): (
 
   -- https://github.com/diku-dk/fft for FFT stuff
 
-  -- See for Gaussian: https://github.com/scipy/scipy/blob/master/scipy/ndimage/filters.py#L160
-
   let sobel (x) =
     let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
                          , [ M.from_fraction (-2) 1, M.from_fraction 0 1, M.from_fraction 2 1 ]
@@ -238,8 +239,6 @@ module mk_image_real (M: real): (
         (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
-
-  -- see: https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf
 
   local let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
     let one = M.from_fraction 1 1
