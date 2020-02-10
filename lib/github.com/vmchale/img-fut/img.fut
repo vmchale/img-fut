@@ -58,8 +58,8 @@ module type image_real = {
   -- See [this page](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm).
   val laplacian [m][n]: [m][n]real -> [m][n]real
 
-  -- -- | See [here](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm) for reference.
-  -- val laplacian_of_gaussian [m][n]: (sigma: real) -> [m][n]real -> [m][n]real
+  -- | See [here](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm) for reference.
+  val laplacian_of_gaussian [m][n]: (sigma: real) -> [m][n]real -> [m][n]real
 
 }
 
@@ -254,11 +254,41 @@ module mk_image_real (M: real): (
 
     in mag_intermed (convolve g_x x) (convolve g_y x)
 
-  -- TODO: scale kernel
+  local let scale_2d (x) =
+    let tot = M.sum (flatten x)
+      in map (\x_row -> map (M./ tot) x_row) x
+
+  let laplacian_of_gaussian(sigma) =
+    let g_log(sigma: M.t)(x: M.t)(y: M.t): M.t =
+      let one = M.from_fraction 1 1
+      let two = M.from_fraction 2 1
+      let four = M.from_fraction 4 1
+
+      let rat = (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)
+
+      in M.negate (one M./ (M.pi M.* sigma M.** four)) M.* (one M.- rat) M.*
+        M.exp (M.negate rat)
+
+    let log_kernel (sigma: M.t): [][]M.t =
+      let three = M.from_fraction 3 1
+      let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+      let dim = 2 * radius + 1
+      let pre_ker =
+        tabulate_2d dim dim
+          (\i j ->
+            let i' = M.from_fraction (i - radius) 1
+            let j' = M.from_fraction (j - radius) 1
+            in g_log sigma i' j')
+      in
+
+      -- trace?
+      scale_2d(pre_ker)
+
+    in
+
+    correlate (log_kernel sigma)
+
   let gaussian(sigma) =
-    let scale_2d (x) =
-      let tot = M.sum (flatten x)
-        in map (\x_row -> map (M./ tot) x_row) x
 
     let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
       let one = M.from_fraction 1 1
@@ -275,8 +305,8 @@ module mk_image_real (M: real): (
         tabulate_2d dim dim
           (\i j ->
             -- TODO: is this right?
-            let i' = M.from_fraction ((i - 1)/2) 1
-            let j' = M.from_fraction ((j - 1)/2) 1
+            let i' = M.from_fraction (i - radius) 1
+            let j' = M.from_fraction (j - radius) 1
             in g_gaussian sigma i' j')
       in
 
@@ -318,6 +348,7 @@ module mk_image_float (M: float): (
   let crop = img_numeric.crop
   let gaussian = img_float.gaussian
   let laplacian = img_float.laplacian
+  let laplacian_of_gaussian = img_float.laplacian_of_gaussian
 
   -- | This is kind of slow.
   let median_filter (n) =

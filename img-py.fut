@@ -17,3 +17,6 @@ entry gaussian_filter_f64 = img_f64.gaussian 3
 
 entry laplacian_filter_f32 = img_f32.laplacian
 entry laplacian_filter_f64 = img_f64.laplacian
+
+entry laplacian_gaussian_filter_f32 = img_f32.laplacian_of_gaussian 1.5
+entry laplacian_gaussian_filter_f64 = img_f64.laplacian_of_gaussian 1.5
