@@ -1,3 +1,5 @@
+- [ ] Replace this? Elliptical Fourier series: https://github.com/hbldh/pyefd
+- [ ] https://github.com/SPINLab
 - [ ] See: https://docs.scipy.org/doc/scipy/reference/ndimage.html
 - [ ] Replace fft? https://docs.scipy.org/doc/scipy/reference/tutorial/fft.html
   - [ ] lol replace half of SciPy
