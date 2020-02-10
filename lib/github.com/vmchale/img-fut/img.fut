@@ -1,10 +1,5 @@
 -- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 
--- other image types?
--- [3]u8
---
--- module type for vector spaces?
-
 module type image_numeric = {
 
   type num
@@ -12,8 +7,13 @@ module type image_numeric = {
   -- | Linear transform of a grayscale image
   val matmul [m][n][p]: [n][m]num -> [m][p]num -> [n][p]num
 
+  -- see https://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html#t:Border
+  type border = #edge | #reflect
+
   val with_window [m][n]: (k: i32) -> ([k][k]num -> num) -> [m][n]num -> [m][n]num
   -- TODO: reflect etc
+  -- TODO: pixel type
+  -- Look at colour-accelerate?
 
   -- | This throws away pixels; it does no interpolation
   val ez_resize [m][n]: (k: i32) -> (l: i32) -> [m][n]num -> [k][l]num
@@ -74,14 +74,14 @@ module type image_float = {
 
 }
 
--- TODO: pixel type
--- Look at colour-accelerate?
 
 module mk_image_numeric (M: numeric): (
   image_numeric with num = M.t
   ) = {
 
   type num = M.t
+
+  type border = #edge | #reflect
 
   let with_window [x_rows][x_cols] (ker_n)(f)(x: [x_rows][x_cols]M.t) =
     let extended_n = ker_n / 2
@@ -179,6 +179,8 @@ module mk_image_real (M: real): (
 
   module img_real = mk_image_numeric M
 
+  type border = img_real.border
+
   let with_window = img_real.with_window
   let maximum_filter = img_real.maximum_filter
   let minimum_filter = img_real.minimum_filter
@@ -202,16 +204,7 @@ module mk_image_real (M: real): (
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
 
-  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
-  -- https://terpconnect.umd.edu/~toh/spectrum/FourierFilter.html
-  -- https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4730687/
   -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
-
-  -- https://reinvantveer.github.io/2019/07/12/elliptical_fourier_analysis.html
-
-  -- https://homepages.inf.ed.ac.uk/rbf/HIPR2/gsmooth.htm
-
-  -- https://github.com/diku-dk/fft for FFT stuff
 
   let sobel (x) =
     let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
@@ -331,6 +324,8 @@ module mk_image_float (M: float): (
   type num = M.t
   type real = M.t
   type float = M.t
+
+  type border = img_numeric.border
 
   -- TODO: there's probably a better way to do this...
   let matmul = img_numeric.matmul
