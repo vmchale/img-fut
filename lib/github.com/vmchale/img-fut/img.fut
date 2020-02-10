@@ -44,6 +44,8 @@ module type image_real = {
 
   val mean_filter [m][n]: i32 -> [m][n]real -> [m][n]real
 
+  val fft_mean_filter [m][n]: i32 -> [m][n]real -> [m][n]real
+
   val sobel [m][n]: [m][n]real -> [m][n]real
 
   val prewitt [m][n]: [m][n]real -> [m][n]real
@@ -177,7 +179,9 @@ module mk_image_real (M: real): (
   type num = M.t
   type real = M.t
 
+  local import "../../diku-dk/fft/stockham-radix-2"
   module img_real = mk_image_numeric M
+  module fft = mk_fft M
 
   type border = img_real.border
 
@@ -200,6 +204,16 @@ module mk_image_real (M: real): (
     in
 
     convolve ker
+
+  local let conjugate_fft (f: [][]real -> [][]real) : [][]real -> [][]real =
+    let project_real [m][n] (xs: [m][n](real, real)) : [m][n]real =
+      map (map (\(x, _) -> x)) xs
+    in
+
+    project_real <-< fft.ifft2_re <-< f <-< project_real <-< fft.fft2_re
+
+  let fft_mean_filter (n) =
+    conjugate_fft(mean_filter n)
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections (obviously)
@@ -344,6 +358,7 @@ module mk_image_float (M: float): (
   let gaussian = img_float.gaussian
   let laplacian = img_float.laplacian
   let laplacian_of_gaussian = img_float.laplacian_of_gaussian
+  let fft_mean_filter = img_float.fft_mean_filter
 
   -- | This is kind of slow.
   let median_filter (n) =
