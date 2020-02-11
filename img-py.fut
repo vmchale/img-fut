@@ -20,3 +20,6 @@ entry laplacian_filter_f64 = img_f64.laplacian
 
 entry laplacian_gaussian_filter_f32 = img_f32.laplacian_of_gaussian 1.5
 entry laplacian_gaussian_filter_f64 = img_f64.laplacian_of_gaussian 1.5
+
+entry fft_mean_filter_f32 = img_f32.fft_mean_filter 5
+entry fft_mean_filter_f64 = img_f64.fft_mean_filter 5
