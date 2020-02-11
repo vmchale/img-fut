@@ -212,11 +212,13 @@ module mk_image_real (M: real): (
 
     project_real <-< fft.ifft2_re <-< f <-< project_real <-< fft.fft2_re
 
+  -- See [here](http://paulbourke.net/miscellaneous/imagefilter/)
+  -- https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.fourier_gaussian.html
   let fft_mean_filter (n) =
     conjugate_fft(mean_filter n)
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
-  -- image rotations + reflections (obviously)
+  -- image rotations + reflections
 
   -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
 
