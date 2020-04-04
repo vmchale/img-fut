@@ -195,8 +195,8 @@ module mk_image_real (M: real): (
 
     convolve ker
 
-  local let conjugate_fft (f: [][]real -> [][]real) : [][]real -> [][]real =
-    let project_real [m][n] (xs: [m][n](real, real)) : [m][n]real =
+  local let conjugate_fft [m][n] (f: [m][n]real -> [m][n]real) : [m][n]real -> [m][n]real =
+    let project_real (xs: [m][n](real, real)) : [m][n]real =
       map (map (\(x, _) -> x)) xs
     in
 
@@ -266,7 +266,7 @@ module mk_image_real (M: real): (
       in M.negate (one M./ (M.pi M.* sigma M.** four)) M.* (one M.- rat) M.*
         M.exp (M.negate rat)
 
-    let log_kernel (sigma: M.t): [][]M.t =
+    let log_kernel =
       let three = M.from_fraction 3 1
       let radius = i32.max 1 (M.to_i32 (three M.* sigma))
       let dim = 2 * radius + 1
@@ -283,7 +283,7 @@ module mk_image_real (M: real): (
 
     in
 
-    correlate (log_kernel sigma)
+    correlate log_kernel
 
   let gaussian(sigma) =
 
@@ -294,7 +294,7 @@ module mk_image_real (M: real): (
       in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
         (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
 
-    let g_kernel (sigma: M.t): [][]M.t =
+    let g_kernel =
       let three = M.from_fraction 3 1
       let radius = i32.max 1 (M.to_i32 (three M.* sigma))
       let dim = 2 * radius + 1
@@ -311,7 +311,7 @@ module mk_image_real (M: real): (
 
     in
 
-    correlate (g_kernel sigma)
+    correlate g_kernel
 
 }
 
@@ -351,6 +351,6 @@ module mk_image_float (M: float): (
 
   -- | This is kind of slow.
   let median_filter (n) =
-    with_window n (statistics.median <-< flatten)
+    with_window n (\x -> x |> flatten |> statistics.median)
 
 }
