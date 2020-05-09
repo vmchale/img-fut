@@ -205,7 +205,7 @@ module mk_image_real (M: real): (
 
     convolve ker
 
-  local let conjugate_fft (f: [][]real -> [][]real) : [][]real -> [][]real =
+  local let conjugate_fft [k][l] (f: [k][l]real -> [k][l]real) : [][]real -> [][]real =
     let project_real [m][n] (xs: [m][n](real, real)) : [m][n]real =
       map (map (\(x, _) -> x)) xs
     in
@@ -297,8 +297,7 @@ module mk_image_real (M: real): (
 
     correlate (log_kernel sigma)
 
-  let gaussian(sigma) =
-
+  local let g_kernel (sigma: M.t): [][]M.t =
     let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
       let one = M.from_fraction 1 1
       let two = M.from_fraction 2 1
@@ -306,23 +305,22 @@ module mk_image_real (M: real): (
       in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
         (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
 
-    let g_kernel (sigma: M.t): [][]M.t =
-      let three = M.from_fraction 3 1
-      let radius = i32.max 1 (M.to_i32 (three M.* sigma))
-      let dim = 2 * radius + 1
-      let pre_ker =
-        tabulate_2d dim dim
-          (\i j ->
-            -- TODO: is this right?
-            let i' = M.from_fraction (i - radius) 1
-            let j' = M.from_fraction (j - radius) 1
-            in g_gaussian sigma i' j')
-      in
-
-      scale_2d(pre_ker)
-
+    -- TODO: even?
+    let three = M.from_fraction 3 1
+    let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+    let dim = 2 * radius + 1
+    let pre_ker =
+      tabulate_2d dim dim
+        (\i j ->
+          -- TODO: is this right?
+          let i' = M.from_fraction (i - radius) 1
+          let j' = M.from_fraction (j - radius) 1
+          in g_gaussian sigma i' j')
     in
 
+    scale_2d(pre_ker)
+
+  let gaussian(sigma) =
     correlate (g_kernel sigma)
 
 }
