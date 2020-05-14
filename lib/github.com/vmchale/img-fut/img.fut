@@ -4,9 +4,6 @@ module type image_numeric = {
 
   type num
 
-  -- | Linear transform of a grayscale image
-  val matmul [m][n][p]: [n][m]num -> [m][p]num -> [n][p]num
-
   -- see https://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html#t:Border
   type border = #edge | #reflect
 
@@ -180,7 +177,6 @@ module mk_image_real (M: real): (
   let minimum_filter = img_real.minimum_filter
   let maximum_2d = img_real.maximum_2d
   let minimum_2d = img_real.minimum_2d
-  let matmul = img_real.matmul
   let convolve = img_real.convolve
   let correlate = img_real.correlate
   let ez_resize = img_real.ez_resize
@@ -310,5 +306,4 @@ module mk_image_real (M: real): (
 
   let gaussian(sigma)(dim) =
     correlate (g_kernel sigma dim)
-
 }
