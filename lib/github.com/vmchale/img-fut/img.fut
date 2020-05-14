@@ -50,7 +50,7 @@ module type image_real = {
 
   val prewitt [m][n]: [m][n]real -> [m][n]real
 
-  -- | 2-D Gaussian blur. The first argument `sigma` is the standard deviation.
+  -- | 2-D Gaussian blur. The first argument `sigma` is the standard deviation. A sensible value for `dim` is `6 * sigma + 1`.
   --
   -- See lecture notes [here](https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf)
   val gaussian [m][n]: (sigma: real) -> (dim: i32) -> [m][n]real -> [m][n]real
@@ -61,6 +61,8 @@ module type image_real = {
   val laplacian [m][n]: [m][n]real -> [m][n]real
 
   -- | See [here](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm) for reference.
+  --
+  -- A sensible value for `dim` is `6 * sigma + 1`.
   val laplacian_of_gaussian [m][n]: (sigma: real) -> (dim: i32) -> [m][n]real -> [m][n]real
 
 }
