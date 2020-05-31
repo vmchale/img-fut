@@ -93,7 +93,7 @@ module mk_image_numeric (M: numeric): (
               if j + extended_n >= x_cols
                 then x_cols - 1
                 else j - extended_n
-          in unsafe (x[i'])[j'])
+          in #[unsafe] (x[i'])[j'])
 
     let window (row_start: i32) (col_start: i32) (row_end: i32) (col_end: i32) (x: [][]M.t) : [][]M.t =
       let ncols = col_end-col_start
@@ -152,7 +152,7 @@ module mk_image_numeric (M: numeric): (
     in
 
     tabulate_2d m n
-      (\i j -> unsafe (x[i * (rows / m)])[j * (cols / n)])
+      (\i j -> #[unsafe] (x[i * (rows / m)])[j * (cols / n)])
 
   let crop (i)(j)(x) =
     map (\x_i -> x_i[:j]) (x[:i])
