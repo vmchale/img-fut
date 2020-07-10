@@ -9,6 +9,11 @@ import           Development.Shake
 import           Development.Shake.FilePath
 import           Development.Shake.Futhark
 
+needInp :: Action ()
+needInp = do
+    need ["futhark.pkg"]
+    needFut ["img-py.fut"]
+
 main :: IO ()
 main = shakeArgs shakeOptions { shakeFiles = ".shake", shakeLint = Just LintBasic, shakeChange = ChangeModtimeAndDigestInput } $ do
     want [ "imgfut.py" ]
@@ -16,8 +21,14 @@ main = shakeArgs shakeOptions { shakeFiles = ".shake", shakeLint = Just LintBasi
     "clean" ~>
         command [] "rm" ["-rf", ".shake", "img", "img.c", "imgfut.py", "Pipfile.lock", "*.c", "*.c.h", "lib/github.com/diku-dk"]
 
+    "docs" ~>
+        need ["docs/index.html"]
+
+    "docs/index.html" %> \_ -> do
+        needInp
+        command [] "futhark" ["doc", "-o", "docs", "lib/github.com/vmchale/img-fut/img.fut"]
+
     "imgfut.py" %> \out -> do
-        need ["futhark.pkg"]
+        needInp
         let inp = "img-py.fut"
-        needFut [inp]
         command [] "futhark" ["pyopencl", inp, "--library", "-o", dropExtension out]
