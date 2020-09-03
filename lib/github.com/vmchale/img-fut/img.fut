@@ -50,7 +50,7 @@ module type image_real = {
   -- | 2-D Gaussian blur. The first argument `sigma` is the standard deviation. A sensible value for `dim` is `6 * sigma + 1`.
   --
   -- See lecture notes [here](https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf)
-  val gaussian [m][n]: (sigma: real) -> (dim: i32) -> [m][n]real -> [m][n]real
+  val gaussian [m][n]: (sigma: real) -> [m][n]real -> [m][n]real
 
   -- | Laplacian filter approximated by a 3x3 fiter.
   --
@@ -60,10 +60,20 @@ module type image_real = {
   -- | See [here](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm) for reference.
   --
   -- A sensible value for `dim` is `6 * sigma + 1`.
-  val laplacian_of_gaussian [m][n]: (sigma: real) -> (dim: i32) -> [m][n]real -> [m][n]real
+  val laplacian_of_gaussian [m][n]: (sigma: real) -> [m][n]real -> [m][n]real
 
 }
 
+module type image_float = {
+
+  include image_real
+
+  type float
+
+  -- | Median filter
+  val median_filter [m][n]: i32 -> [m][n]float -> [m][n]float
+
+}
 module mk_image_numeric (M: numeric): (
   image_numeric with num = M.t
   ) = {
@@ -191,8 +201,8 @@ module mk_image_real (M: real): (
 
     convolve ker
 
-  local let conjugate_fft [k][l] (f: [k][l]real -> [k][l]real) : [k][l]real -> [][]real =
-    let project_real [m][n] (xs: [m][n](real, real)) : [m][n]real =
+  local let conjugate_fft [m][n] (f: [m][n]real -> [m][n]real) : [m][n]real -> [m][n]real =
+    let project_real (xs: [m][n](real, real)) : [m][n]real =
       map (map (\(x, _) -> x)) xs
     in
 
@@ -253,7 +263,7 @@ module mk_image_real (M: real): (
     let tot = M.sum (flatten x)
       in map (\x_row -> map (M./ tot) x_row) x
 
-  let laplacian_of_gaussian(sigma)(dim) =
+  let laplacian_of_gaussian(sigma) =
     let g_log(sigma: M.t)(x: M.t)(y: M.t): M.t =
       let one = M.from_fraction 1 1
       let two = M.from_fraction 2 1
@@ -264,10 +274,10 @@ module mk_image_real (M: real): (
       in M.negate (one M./ (M.pi M.* sigma M.** four)) M.* (one M.- rat) M.*
         M.exp (M.negate rat)
 
-    -- TODO: maybe pick a fixed size? hm
-    let log_kernel (sigma: M.t)(dim: i32): [dim][dim]M.t =
-      -- let dim = 2 * radius + 1
-      let radius = dim / 2
+    let log_kernel =
+      let three = M.from_fraction 3 1
+      let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+      let dim = 2 * radius + 1
       let pre_ker =
         tabulate_2d dim dim
           (\i j ->
@@ -281,9 +291,10 @@ module mk_image_real (M: real): (
 
     in
 
-    correlate (log_kernel sigma dim)
+    correlate log_kernel
 
-  local let g_kernel (sigma: M.t)(dim: i32): [][]M.t =
+  let gaussian(sigma) =
+
     let g_gaussian(sigma: M.t)(x: M.t)(y: M.t): M.t =
       let one = M.from_fraction 1 1
       let two = M.from_fraction 2 1
@@ -291,19 +302,63 @@ module mk_image_real (M: real): (
       in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
         (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
 
-    -- TODO: even?
-    let radius = dim / 2
-    let pre_ker =
-      tabulate_2d dim dim
-        (\i j ->
-          -- TODO: is this right?
-          let i' = M.from_fraction (i - radius) 1
-          let j' = M.from_fraction (j - radius) 1
-          in g_gaussian sigma i' j')
+    let g_kernel =
+      let three = M.from_fraction 3 1
+      let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+      let dim = 2 * radius + 1
+      let pre_ker =
+        tabulate_2d dim dim
+          (\i j ->
+            -- TODO: is this right?
+            let i' = M.from_fraction (i - radius) 1
+            let j' = M.from_fraction (j - radius) 1
+            in g_gaussian sigma i' j')
+      in
+
+      scale_2d(pre_ker)
+
     in
 
-    scale_2d(pre_ker)
+    correlate g_kernel
 
-  let gaussian(sigma)(dim) =
-    correlate (g_kernel sigma dim)
+}
+
+module mk_image_float (M: float): (
+  image_float with float = M.t
+  ) = {
+
+  local import "../../diku-dk/statistics/statistics"
+
+  module img_numeric = mk_image_numeric M
+  module img_float = mk_image_real M
+  module statistics = mk_statistics M
+
+  type num = M.t
+  type real = M.t
+  type float = M.t
+
+  type border = img_numeric.border
+
+  -- TODO: there's probably a better way to do this...
+  let correlate = img_numeric.correlate
+  let convolve = img_numeric.convolve
+  let sobel = img_float.sobel
+  let prewitt = img_float.prewitt
+  let mean_filter = img_float.mean_filter
+  let maximum_filter = img_numeric.maximum_filter
+  let minimum_filter = img_numeric.minimum_filter
+  let with_window = img_numeric.with_window
+  let maximum_2d = img_numeric.maximum_2d
+  let minimum_2d = img_numeric.minimum_2d
+  let ez_resize = img_numeric.ez_resize
+  let crop = img_numeric.crop
+  let gaussian = img_float.gaussian
+  let laplacian = img_float.laplacian
+  let laplacian_of_gaussian = img_float.laplacian_of_gaussian
+  let fft_mean_filter = img_float.fft_mean_filter
+
+  -- | This is kind of slow.
+  let median_filter (n) =
+    with_window n (\x -> x |> flatten |> statistics.median)
+
 }
