@@ -35,5 +35,7 @@ print('Laplacian-of-Gaussian Filter (SciPy)', timeit.timeit('scipy.ndimage.gauss
 
 print('Mean filter (Large, Futhark)', timeit.timeit('mod.mean_filter_f32(img_large)', setup=setup, number=1000), "ms")
 print('Mean Filter (Large, SciPy)', timeit.timeit('scipy.ndimage.uniform_filter(img_large, 7)', setup=setup_scipy, number=1000), "ms")
+print('Sobel (Large, Futhark)', timeit.timeit('mod.sobel_f32(img_large)', setup=setup, number=1000), "ms")
+print('Sobel (Large, SciPy)', timeit.timeit('scipy.ndimage.sobel(img_large)', setup=setup_scipy, number=1000), "ms")
 print('Gaussian filter (Large, Futhark)', timeit.timeit('mod.gaussian_filter_f32(img_large)', setup=setup, number=1000), "ms")
 print('Gaussian Filter (Large, SciPy)', timeit.timeit('scipy.ndimage.gaussian_filter(img_large, 3)', setup=setup_scipy, number=1000), "ms")
