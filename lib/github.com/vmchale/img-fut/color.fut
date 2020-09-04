@@ -1,7 +1,9 @@
+-- | This module works but doesn't do much
 module type color = {
 
   type real
 
+  -- (r, g, b)
   type pixel = (real, real, real)
 
   val luminance : pixel -> real
