@@ -202,6 +202,7 @@ module mk_image_numeric (M: numeric): (
 
 }
 
+-- TODO: mk_image_real for vectors as well (tuples &c.)
 module mk_image_real (M: real): (
   image_real with real = M.t
   ) = {
