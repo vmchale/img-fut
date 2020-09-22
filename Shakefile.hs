@@ -21,6 +21,16 @@ main = shakeArgs shakeOptions { shakeFiles = ".shake", shakeLint = Just LintBasi
     "clean" ~>
         command [] "rm" ["-rf", ".shake", "img", "img.c", "imgfut.py", "Pipfile.lock", "*.c", "*.c.h", "lib/github.com/diku-dk"]
 
+    "Pipfile.lock" %> \_ ->
+        command [] "pipenv" ["install"]
+
+    "harness.py" %> \_ ->
+        need ["Pipfile.lock", "imgfut.py"]
+
+    "bench" ~> do
+        need ["harness.py"]
+        command [] "pipenv" ["run", "python", "harness.py"]
+
     "docs" ~>
         need ["docs/index.html"]
 
