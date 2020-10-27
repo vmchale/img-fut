@@ -1,6 +1,6 @@
 #!/usr/bin/env cabal
 {- cabal:
-build-depends: base, shake-futhark, shake
+build-depends: base, shake-futhark >= 0.2.0.0, shake
 default-language: Haskell2010
 ghc-options: -Wall -threaded -rtsopts "-with-rtsopts=-I0 -qg -qb"
 -}
@@ -17,6 +17,10 @@ needInp = do
 main :: IO ()
 main = shakeArgs shakeOptions { shakeFiles = ".shake", shakeLint = Just LintBasic, shakeChange = ChangeModtimeAndDigestInput } $ do
     want [ "imgfut.py" ]
+
+    ["lib/github.com/diku-dk/statistics/statistics.fut", "lib/github.com/diku-dk/fft/stockham-radix-2.fut"] &%> \_ -> do
+        need ["futhark.pkg"]
+        command [] "futhark" ["pkg", "sync"]
 
     "clean" ~>
         command [] "rm" ["-rf", ".shake", "img", "img.c", "imgfut.py", "Pipfile.lock", "*.c", "*.c.h", "lib/github.com/diku-dk"]
