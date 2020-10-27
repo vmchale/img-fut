@@ -7,20 +7,20 @@ module type image_numeric = {
   -- see https://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html#t:Border
   type border = #edge | #reflect
 
-  val with_window [m][n]: border -> (k: i32) -> ([k][k]num -> num) -> [m][n]num -> [m][n]num
+  val with_window [m][n]: border -> (k: i64) -> ([k][k]num -> num) -> [m][n]num -> [m][n]num
   -- TODO: reflect etc
   -- TODO: pixel type
   -- Look at colour-accelerate?
 
   -- | This throws away pixels; it does no interpolation
-  val ez_resize [m][n]: (k: i32) -> (l: i32) -> [m][n]num -> [k][l]num
+  val ez_resize [m][n]: (k: i64) -> (l: i64) -> [m][n]num -> [k][l]num
 
   -- | This performs no interpolation; it simply throws away pixels
-  val crop [m][n]: (k: i32) -> (l: i32) -> [m][n]num -> [k][l]num
+  val crop [m][n]: (k: i64) -> (l: i64) -> [m][n]num -> [k][l]num
 
-  val maximum_filter [m][n]: border -> i32 -> [m][n]num -> [m][n]num
+  val maximum_filter [m][n]: border -> i64 -> [m][n]num -> [m][n]num
 
-  val minimum_filter [m][n]: border -> i32 -> [m][n]num -> [m][n]num
+  val minimum_filter [m][n]: border -> i64 -> [m][n]num -> [m][n]num
 
   val maximum_2d [m][n]: [m][n]num -> num
 
@@ -39,9 +39,9 @@ module type image_real = {
 
   type real
 
-  val mean_filter [m][n]: border -> i32 -> [m][n]real -> [m][n]real
+  val mean_filter [m][n]: border -> i64 -> [m][n]real -> [m][n]real
 
-  val fft_mean_filter [m][n]: i32 -> [m][n]real -> [][]real
+  val fft_mean_filter [m][n]: i64 -> [m][n]real -> [][]real
 
   val sobel [m][n]: border -> [m][n]real -> [m][n]real
 
@@ -69,7 +69,7 @@ module type image_float = {
   type float
 
   -- | Median filter
-  val median_filter [m][n]: border -> i32 -> [m][n]float -> [m][n]float
+  val median_filter [m][n]: border -> i64 -> [m][n]float -> [m][n]float
 
 }
 module mk_image_numeric (M: numeric): (
@@ -80,7 +80,7 @@ module mk_image_numeric (M: numeric): (
 
   type border = #edge | #reflect
 
-  local let window (row_start: i32) (col_start: i32) (row_end: i32) (col_end: i32) (x: [][]M.t) : [][]M.t =
+  local let window (row_start: i64) (col_start: i64) (row_end: i64) (col_end: i64) (x: [][]M.t) : [][]M.t =
     let ncols = col_end-col_start
     in map (\x_i -> x_i[col_start:col_end] :> [ncols]M.t) (x[row_start:row_end])
 
@@ -310,7 +310,7 @@ module mk_image_real (M: real): (
 
     let log_kernel =
       let three = M.from_fraction 3 1
-      let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+      let radius = i64.max 1 (M.to_i64 (three M.* sigma))
       let dim = 2 * radius + 1
       let pre_ker =
         tabulate_2d dim dim
@@ -338,7 +338,7 @@ module mk_image_real (M: real): (
 
     let g_kernel =
       let three = M.from_fraction 3 1
-      let radius = i32.max 1 (M.to_i32 (three M.* sigma))
+      let radius = i64.max 1 (M.to_i64 (three M.* sigma))
       let dim = 2 * radius + 1
       let pre_ker =
         tabulate_2d dim dim

@@ -11,10 +11,16 @@
 - [ ] https://github.com/diku-dk/lys
 - [ ] lol R https://github.com/wishkerman/DiaOutline
 - [ ] http://www.mif.vu.lt/atpazinimas/dip/FIP/fip-Smoothin.html
-- [ ] ATS + Futhark for statistics?
+- [x] ATS + Futhark for statistics?
+- [ ] https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/
+- [ ] https://github.com/topics/radon-transform
+- [ ] http://finitetransform.sourceforge.net/
 # Features
-- [ ] Gaussian blur
+- [x] Gaussian blur
 - [ ] Image types besides `Float`/`Double`
+  - [ ] Conversion from normal-ish formats?
+    - [ ] Survery how they are actually used in python code?
+- [ ] Correctness of FFT functions?
 # Testing
 - [ ] Make sure correlation/convolution does the right thing
 # Documentation
