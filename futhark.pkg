@@ -3,5 +3,5 @@ package github.com/vmchale/img-fut
 require {
   github.com/diku-dk/statistics 0.2.0 #d34f60edf000a16e8f78fd25b2c6ae498b3b7f0d
   github.com/diku-dk/fft 0.2.0 #7869c7b969cb77d5367059daf2b37c4d137922b3
-  github.com/diku-dk/sorts 0.4.0 #94b33a2ba7b4c6669da70cb688fd6d1e5b31aecb
+  github.com/diku-dk/sorts 0.4.1 #05e8162b8429498d64835a9ad981636cff22d9a7
 }
