@@ -305,8 +305,8 @@ module mk_image_real (M: real): (
 
       let rat = (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)
 
-      in M.negate (one M./ (M.pi M.* sigma M.** four)) M.* (one M.- rat) M.*
-        M.exp (M.negate rat)
+      in M.neg (one M./ (M.pi M.* sigma M.** four)) M.* (one M.- rat) M.*
+        M.exp (M.neg rat)
 
     let log_kernel =
       let three = M.from_fraction 3 1
@@ -334,7 +334,7 @@ module mk_image_real (M: real): (
       let two = M.from_fraction 2 1
 
       in (one M./ (two M.* M.pi M.* sigma M.* sigma)) M.*
-        (M.exp (M.negate (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
+        (M.exp (M.neg (x M.* x M.+ y M.* y) M./ (two M.* sigma M.* sigma)))
 
     let g_kernel =
       let three = M.from_fraction 3 1
