@@ -22,8 +22,9 @@ main = shakeArgs shakeOptions { shakeFiles = ".shake", shakeLint = Just LintBasi
         need ["futhark.pkg"]
         command [] "futhark" ["pkg", "sync"]
 
-    "clean" ~>
-        command [] "rm" ["-rf", ".shake", "img", "img.c", "imgfut.py", "Pipfile.lock", "*.c", "*.c.h", "lib/github.com/diku-dk"]
+    "clean" ~> do
+        removeFilesAfter "data" ["//*.in", "//*.out"]
+        command [] "rm" ["-rf", ".shake", "img-py", "img-py.c", "imgfut.py", "Pipfile.lock", "*.c", "*.c.h", "lib/github.com/diku-dk"]
 
     "Pipfile.lock" %> \_ ->
         command [] "pipenv" ["install"]
