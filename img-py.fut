@@ -24,3 +24,18 @@ entry laplacian_gaussian_filter_f64 = img_f64.laplacian_of_gaussian #reflect 1.5
 
 entry fft_mean_filter_f32 = img_f32.fft_mean_filter 5
 entry fft_mean_filter_f64 = img_f64.fft_mean_filter 5
+
+-- ==
+-- entry: mean_filter_f32
+-- compiled random input { [400][300]f32 }
+-- auto output
+
+-- ==
+-- entry: mean_filter_f32
+-- compiled random input { [1920][1236]f32 }
+-- auto output
+
+-- ==
+-- entry: gaussian_filter_f32
+-- compiled random input { [1920][1236]f32 }
+-- auto output
