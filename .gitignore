@@ -2,3 +2,7 @@
 *.swp
 diku-dk
 imgfut.py
+*.in
+*.out
+img-py
+*.c
