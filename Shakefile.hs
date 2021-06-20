@@ -33,7 +33,7 @@ main = shakeArgs shakeOptions { shakeFiles = ".shake", shakeLint = Just LintBasi
         need ["Pipfile.lock", "imgfut.py"]
 
     "bench" ~> do
-        need ["harness.py"]
+        need ["harness.py", "sobel2d.py"]
         command [] "pipenv" ["run", "python", "harness.py"]
 
     "docs" ~>

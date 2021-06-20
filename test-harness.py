@@ -4,6 +4,8 @@ import imageio
 import numpy as np
 import scipy.ndimage
 
+from sobel2d import sobel2d
+
 from matplotlib import pyplot as plt
 
 mod = imgfut.imgfut()
@@ -15,7 +17,7 @@ img2 = np.array(imageio.imread('data/valve.png', pilmode='F'))
 print ("processing...")
 edges_img0 = mod.sobel_f32(img0)
 edges_img2 = mod.sobel_f32(img2)
-edges_img0_scipy = scipy.ndimage.sobel(img0)
+edges_img0_scipy = sobel2d(img0)
 blur_img0 = mod.mean_filter_f32(img0)
 gauss_img0 = mod.gaussian_filter_f32(img0)
 laplacian_img0 = mod.laplacian_filter_f32(img0)
