@@ -17,6 +17,7 @@
 - [ ] http://finitetransform.sourceforge.net/
 # Features
 - [x] Gaussian blur
+- [ ] https://docs.scipy.org/doc/scipy/reference/reference/ndimage.html#fourier-filters
 - [ ] Image types besides `Float`/`Double`
   - [ ] Conversion from normal-ish formats?
     - [ ] Survery how they are actually used in python code?
