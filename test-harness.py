@@ -4,7 +4,7 @@ import imageio
 import numpy as np
 import scipy.ndimage
 
-from sobel2d import sobel2d
+from scipy2d import sobel2d
 
 from matplotlib import pyplot as plt
 
