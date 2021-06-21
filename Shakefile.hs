@@ -29,7 +29,7 @@ main = shakeArgs shakeOptions { shakeFiles = ".shake", shakeLint = Just LintBasi
     "Pipfile.lock" %> \_ ->
         command [] "pipenv" ["install"]
 
-    "harness.py" %> \_ ->
+    ["harness.py", "test-harness.py"] &%> \_ ->
         need ["Pipfile.lock", "imgfut.py"]
 
     "bench" ~> do
