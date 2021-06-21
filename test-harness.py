@@ -26,7 +26,7 @@ log_img0 = mod.laplacian_gaussian_filter_f32(img0)
 log_img0_scipy = scipy.ndimage.gaussian_laplace(img0, 1.5)
 # FFT stuff not working!
 fft_blur_img1 = mod.fft_mean_filter_f32(img1)
-fft_blur_img1_scipy = scipy.ndimage.fourier_uniform(img1, 0)
+fft_blur_img1_scipy = scipy.ndimage.fourier_uniform(img1, 5)
 print ("done processing...")
 
 plt.gray()
