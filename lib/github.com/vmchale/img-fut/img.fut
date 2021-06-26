@@ -1,35 +1,49 @@
 -- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 
+module type vector_space = {
+  type s
+  type v
+
+  val add: v -> v -> v
+  val mult: s -> v -> v
+  val inv: v -> v
+
+  val +: s -> s -> s
+  val *: s -> s -> s
+  val neg: s -> s
+
+}
+
 module type image_numeric = {
 
-  type num
+  include vector_space
 
   -- see https://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html#t:Border
   type border = #edge | #reflect
 
-  val with_window [m][n]: border -> (k: i64) -> ([k][k]num -> num) -> [m][n]num -> [m][n]num
+  val with_window [m][n]: border -> (k: i64) -> ([k][k]v -> v) -> [m][n]v -> [m][n]v
   -- TODO: reflect etc
   -- TODO: pixel type
   -- Look at colour-accelerate?
 
   -- | This throws away pixels; it does no interpolation
-  val ez_resize [m][n]: (k: i64) -> (l: i64) -> [m][n]num -> [k][l]num
+  val ez_resize [m][n]: (k: i64) -> (l: i64) -> [m][n]v -> [k][l]v
 
   -- | This performs no interpolation; it simply throws away pixels
-  val crop [m][n]: (k: i64) -> (l: i64) -> [m][n]num -> [k][l]num
+  val crop [m][n]: (k: i64) -> (l: i64) -> [m][n]v -> [k][l]v
 
-  val maximum_filter [m][n]: border -> i64 -> [m][n]num -> [m][n]num
+  val maximum_filter [m][n]: border -> i64 -> [m][n]v -> [m][n]v
 
-  val minimum_filter [m][n]: border -> i64 -> [m][n]num -> [m][n]num
+  val minimum_filter [m][n]: border -> i64 -> [m][n]v -> [m][n]v
 
-  val maximum_2d [m][n]: [m][n]num -> num
+  val maximum_2d [m][n]: [m][n]v -> v
 
-  val minimum_2d [m][n]: [m][n]num -> num
+  val minimum_2d [m][n]: [m][n]v -> v
 
-  val correlate [m][n][p]: border -> [p][p]num -> [m][n]num -> [m][n]num
+  val correlate [m][n][p]: border -> [p][p]s -> [m][n]v -> [m][n]v
 
   -- | Kernel must be a square matrix; `p` must be odd.
-  val convolve [m][n][p]: border -> [p][p]num -> [m][n]num -> [m][n]num
+  val convolve [m][n][p]: border -> [p][p]s -> [m][n]v -> [m][n]v
 
 }
 
@@ -37,28 +51,26 @@ module type image_real = {
 
   include image_numeric
 
-  type real
+  val mean_filter [m][n]: border -> i64 -> [m][n]v -> [m][n]v
 
-  val mean_filter [m][n]: border -> i64 -> [m][n]real -> [m][n]real
+  val fft_mean_filter [m][n]: i64 -> [m][n]v -> [][]v
 
-  val fft_mean_filter [m][n]: i64 -> [m][n]real -> [][]real
+  val sobel [m][n]: border -> [m][n]v -> [m][n]v
 
-  val sobel [m][n]: border -> [m][n]real -> [m][n]real
-
-  val prewitt [m][n]: border -> [m][n]real -> [m][n]real
+  val prewitt [m][n]: border -> [m][n]v -> [m][n]v
 
   -- | 2-D Gaussian blur. The first argument `sigma` is the standard deviation.
   --
   -- See lecture notes [here](https://www.cs.auckland.ac.nz/courses/compsci373s1c/PatricesLectures/Gaussian%20Filtering_1up.pdf)
-  val gaussian [m][n]: border -> (sigma: real) -> [m][n]real -> [m][n]real
+  val gaussian [m][n]: border -> (sigma: s) -> [m][n]v -> [m][n]v
 
   -- | Laplacian filter approximated by a 3x3 fiter.
   --
   -- See [this page](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm).
-  val laplacian [m][n]: border -> [m][n]real -> [m][n]real
+  val laplacian [m][n]: border -> [m][n]v -> [m][n]v
 
   -- | See [here](https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm) for reference.
-  val laplacian_of_gaussian [m][n]: border -> (sigma: real) -> [m][n]real -> [m][n]real
+  val laplacian_of_gaussian [m][n]: border -> (sigma: s) -> [m][n]v -> [m][n]v
 
 }
 
@@ -72,11 +84,19 @@ module type image_float = {
   val median_filter [m][n]: border -> i64 -> [m][n]float -> [m][n]float
 
 }
-module mk_image_numeric (M: numeric): (
-  image_numeric with num = M.t
-  ) = {
 
-  type num = M.t
+module mk_image_numeric (M: numeric)
+  = {
+
+  type s = M.t
+  type v = M.t
+
+  let add = (M.+)
+  let mult = (M.*)
+  let inv = M.neg
+  let (+) = (M.+)
+  let (*) = (M.*)
+  let neg = M.neg
 
   type border = #edge | #reflect
 
@@ -88,20 +108,20 @@ module mk_image_numeric (M: numeric): (
     let extended_n = ker_n / 2
 
     let reflected =
-      tabulate_2d (x_rows + ker_n - 1) (x_cols + ker_n - 1)
+      tabulate_2d (x_rows i64.+ ker_n - 1) (x_cols i64.+ ker_n - 1)
       (\i j ->
         let i' =
           if i <= extended_n then
             extended_n - i
           else
-            if i + extended_n >= x_rows
+            if i i64.+ extended_n >= x_rows
               then x_rows - 1
               else i - extended_n
         let j' =
           if j <= extended_n then
             extended_n - j
           else
-            if j + extended_n >= x_cols
+            if j i64.+ extended_n >= x_cols
               then
                 x_cols - 1
                 else j - extended_n
@@ -110,7 +130,7 @@ module mk_image_numeric (M: numeric): (
 
     tabulate_2d x_rows x_cols
       (\i j ->
-         let surroundings = window i j (i + ker_n) (j + ker_n) reflected
+         let surroundings = window i j (i i64.+ ker_n) (j i64.+ ker_n) reflected
                             :> [ker_n][ker_n]M.t
         in
         f surroundings)
@@ -120,20 +140,20 @@ module mk_image_numeric (M: numeric): (
 
     -- extend it at the edges
     let extended =
-      tabulate_2d (x_rows + ker_n - 1) (x_cols + ker_n - 1)
+      tabulate_2d (x_rows i64.+ ker_n - 1) (x_cols i64.+ ker_n - 1)
         (\i j ->
           let i' =
             if i <= extended_n then
               0
             else
-              if i + extended_n >= x_rows
+              if i i64.+ extended_n >= x_rows
                 then x_rows - 1
                 else i - extended_n
           let j' =
             if j <= extended_n then
               0
             else
-              if j + extended_n >= x_cols
+              if j i64.+ extended_n >= x_cols
                 then x_cols - 1
                 else j - extended_n
           in #[unsafe] (x[i'])[j'])
@@ -141,7 +161,7 @@ module mk_image_numeric (M: numeric): (
 
     tabulate_2d x_rows x_cols
       (\i j ->
-         let surroundings = window i j (i + ker_n) (j + ker_n) extended
+         let surroundings = window i j (i i64.+ ker_n) (j i64.+ ker_n) extended
                             :> [ker_n][ker_n]M.t
         in
         f surroundings)
@@ -177,7 +197,7 @@ module mk_image_numeric (M: numeric): (
 
     let overlay_ker [n] (ker: [n][n]M.t) (slice: [n][n]M.t) : [n][n]M.t =
       tabulate_2d n n
-        (\i j -> (ker[i])[j] M.* (slice[i])[j])
+        (\i j -> (ker[i])[j] * (slice[i])[j])
 
     in
     with_window scheme ker_n (\window -> sum2 (overlay_ker ker window))
@@ -195,7 +215,7 @@ module mk_image_numeric (M: numeric): (
     in
 
     tabulate_2d m n
-      (\i j -> #[unsafe] (x[i * (rows / m)])[j * (cols / n)])
+      (\i j -> #[unsafe] (x[i i64.* (rows / m)])[j i64.* (cols / n)])
 
   let crop (i)(j)(x) =
     map (\x_i -> x_i[:j]) (x[:i])
@@ -203,12 +223,12 @@ module mk_image_numeric (M: numeric): (
 }
 
 -- TODO: mk_image_real for vectors as well (tuples &c.)
-module mk_image_real (M: real): (
-  image_real with real = M.t
-  ) = {
+module mk_image_real (M: real)
+  = {
 
-  type num = M.t
   type real = M.t
+  type s = M.t
+  type v = M.t
 
   local import "../../diku-dk/fft/stockham-radix-2"
   module img_real = mk_image_numeric M
@@ -242,6 +262,7 @@ module mk_image_real (M: real): (
 
     project_real <-< fft.ifft2_re <-< f <-< project_real <-< fft.fft2_re
 
+  -- http://www.cs.cmu.edu/~16385/s15/lectures/Lecture3.pdf
   -- See [here](http://paulbourke.net/miscellaneous/imagefilter/)
   -- https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.fourier_gaussian.html
   let fft_mean_filter (n) =
@@ -357,9 +378,8 @@ module mk_image_real (M: real): (
 
 }
 
-module mk_image_float (M: float): (
-  image_float with float = M.t
-  ) = {
+module mk_image_float (M: float)
+  = {
 
   local import "../../diku-dk/statistics/statistics"
 
@@ -367,7 +387,8 @@ module mk_image_float (M: float): (
   module img_float = mk_image_real M
   module statistics = mk_statistics M
 
-  type num = M.t
+  type s = M.t
+  type v = M.t
   type real = M.t
   type float = M.t
 
