@@ -1,6 +1,7 @@
 -- | Various image processing functions present in SciPy's [ndimage](https://docs.scipy.org/doc/scipy/reference/ndimage.html).
 
 module type vector_space = {
+
   type s
   type v
 
@@ -11,6 +12,16 @@ module type vector_space = {
   val +: s -> s -> s
   val *: s -> s -> s
   val neg: s -> s
+
+  val from_fraction: i64 -> i64 -> s
+
+  val max: v -> v -> v
+  val min: v -> v -> v
+
+  val maximum [n]: [n]v -> v
+  val minimum [n]: [n]v -> v
+
+  val sum [n]: [n]v -> v
 
 }
 
@@ -51,6 +62,8 @@ module type image_real = {
 
   include image_numeric
 
+  val from_fraction: i64 -> i64 -> s
+
   val mean_filter [m][n]: border -> i64 -> [m][n]v -> [m][n]v
 
   val fft_mean_filter [m][n]: i64 -> [m][n]v -> [][]v
@@ -85,7 +98,7 @@ module type image_float = {
 
 }
 
-module mk_image_numeric (M: numeric)
+module mk_numeric_vector_space(M: numeric): vector_space
   = {
 
   type s = M.t
@@ -97,14 +110,48 @@ module mk_image_numeric (M: numeric)
   let (+) = (M.+)
   let (*) = (M.*)
   let neg = M.neg
+  let max = M.max
+  let min = M.min
+  let maximum = M.maximum
+  let minimum = M.minimum
+  let sum = M.sum
+
+  let from_fraction(x)(y) = M.i64 x M./ M.i64 y
+
+}
+
+module mk_image_numeric (M: numeric): image_numeric
+  = {
+
+  module vs = mk_numeric_vector_space M
+
+  type s = vs.s
+  type v = vs.v
+
+  let (+) = (vs.+)
+  let (*) = (vs.*)
+  let neg = vs.neg
+  let max = vs.max
+  let min = vs.min
+
+  let from_fraction = vs.from_fraction
+
+  let add = vs.add
+  let mult = vs.mult
+  let inv = vs.inv
+
+  let maximum = vs.maximum
+  let minimum = vs.minimum
+
+  let sum = vs.sum
 
   type border = #edge | #reflect
 
-  local let window (row_start: i64) (col_start: i64) (row_end: i64) (col_end: i64) (x: [][]M.t) : [][]M.t =
+  local let window (row_start: i64) (col_start: i64) (row_end: i64) (col_end: i64) (x: [][]v) : [][]v =
     let ncols = col_end-col_start
-    in map (\x_i -> x_i[col_start:col_end] :> [ncols]M.t) (x[row_start:row_end])
+    in map (\x_i -> x_i[col_start:col_end] :> [ncols]v) (x[row_start:row_end])
 
-  let with_window_reflect [x_rows][x_cols] (ker_n)(f)(x: [x_rows][x_cols]M.t) =
+  let with_window_reflect [x_rows][x_cols] (ker_n)(f)(x: [x_rows][x_cols]v) =
     let extended_n = ker_n / 2
 
     let reflected =
@@ -131,11 +178,11 @@ module mk_image_numeric (M: numeric)
     tabulate_2d x_rows x_cols
       (\i j ->
          let surroundings = window i j (i i64.+ ker_n) (j i64.+ ker_n) reflected
-                            :> [ker_n][ker_n]M.t
+                            :> [ker_n][ker_n]v
         in
         f surroundings)
 
-  let with_window_extended [x_rows][x_cols] (ker_n)(f)(x: [x_rows][x_cols]M.t) =
+  let with_window_extended [x_rows][x_cols] (ker_n)(f)(x: [x_rows][x_cols]v) =
     let extended_n = ker_n / 2
 
     -- extend it at the edges
@@ -162,7 +209,7 @@ module mk_image_numeric (M: numeric)
     tabulate_2d x_rows x_cols
       (\i j ->
          let surroundings = window i j (i i64.+ ker_n) (j i64.+ ker_n) extended
-                            :> [ker_n][ker_n]M.t
+                            :> [ker_n][ker_n]v
         in
         f surroundings)
 
@@ -172,10 +219,10 @@ module mk_image_numeric (M: numeric)
       case #edge -> with_window_extended(ker_n)(f)(x)
 
   let maximum_2d =
-    M.maximum <-< map M.maximum
+    maximum <-< map maximum
 
   let minimum_2d =
-    M.minimum <-< map M.minimum
+    minimum <-< map minimum
 
   -- FIXME: these seem to be slow
   let maximum_filter (border)(sz) =
@@ -190,19 +237,19 @@ module mk_image_numeric (M: numeric)
               (transpose y))
         x
 
-  let correlate [ker_n] (scheme: border)(ker: [ker_n][ker_n]M.t) =
+  let correlate [ker_n] (scheme: border)(ker: [ker_n][ker_n]s) =
 
-    let sum2(mat: [][]M.t) : M.t =
-      M.sum (map (\x -> M.sum x) mat)
+    let sum2(mat: [][]v) : v =
+      sum (map (\x -> sum x) mat)
 
-    let overlay_ker [n] (ker: [n][n]M.t) (slice: [n][n]M.t) : [n][n]M.t =
+    let overlay_ker [n] (ker: [n][n]s) (slice: [n][n]v) : [n][n]v =
       tabulate_2d n n
-        (\i j -> (ker[i])[j] * (slice[i])[j])
+        (\i j -> mult ((ker[i])[j]) ((slice[i])[j]))
 
     in
     with_window scheme ker_n (\window -> sum2 (overlay_ker ker window))
 
-  let convolve [p] (scheme: border)(ker: [p][p]M.t) =
+  let convolve [p] (scheme: border)(ker: [p][p]s) =
     let flip x =
       tabulate_2d p p (\i j -> (x[p-i-1])[p-j-1])
     in
@@ -223,18 +270,20 @@ module mk_image_numeric (M: numeric)
 }
 
 -- TODO: mk_image_real for vectors as well (tuples &c.)
-module mk_image_real (M: real)
+module mk_image_real (M: real): image_real
   = {
-
-  type real = M.t
-  type s = M.t
-  type v = M.t
 
   local import "../../diku-dk/fft/stockham-radix-2"
   module img_real = mk_image_numeric M
   module fft = mk_fft M
 
+  type real = M.t
+  type s = img_real.s
+  type v = img_real.v
+
   type border = img_real.border
+
+  let (*) = (img_real.*)
 
   let with_window = img_real.with_window
   let maximum_filter = img_real.maximum_filter
@@ -245,9 +294,10 @@ module mk_image_real (M: real)
   let correlate = img_real.correlate
   let ez_resize = img_real.ez_resize
   let crop = img_real.crop
+  let from_fraction = img_real.from_fraction
 
   let mean_filter (border)(ker_n) =
-    let x_in = M.from_fraction 1 (ker_n * ker_n)
+    let x_in: s = from_fraction 1 (ker_n i64.* ker_n)
     let ker =
       tabulate_2d ker_n ker_n
         (\_ _ -> x_in)
