@@ -9,6 +9,8 @@ module type vector_space = {
   val mult: s -> v -> v
   val inv: v -> v
 
+  val triang: v -> v -> v
+
   val +: s -> s -> s
   val *: s -> s -> s
   val neg: s -> s
@@ -66,7 +68,7 @@ module type image_real = {
 
   val mean_filter [m][n]: border -> i64 -> [m][n]v -> [m][n]v
 
-  val fft_mean_filter [m][n]: i64 -> [m][n]v -> [][]v
+  -- val fft_mean_filter [m][n]: i64 -> [m][n]v -> [][]v
 
   val sobel [m][n]: border -> [m][n]v -> [m][n]v
 
@@ -116,6 +118,8 @@ module mk_numeric_vector_space(M: numeric): vector_space
   let minimum = M.minimum
   let sum = M.sum
 
+  let triang (x)(y) = x -- FIXME
+
   let from_fraction(x)(y) = M.i64 x M./ M.i64 y
 
 }
@@ -144,6 +148,7 @@ module mk_image_numeric (M: numeric): image_numeric
   let minimum = vs.minimum
 
   let sum = vs.sum
+  let triang = vs.triang
 
   type border = #edge | #reflect
 
@@ -283,6 +288,7 @@ module mk_image_real (M: real): image_real
 
   type border = img_real.border
 
+  let (+) = (img_real.+)
   let (*) = (img_real.*)
 
   let with_window = img_real.with_window
@@ -295,6 +301,7 @@ module mk_image_real (M: real): image_real
   let ez_resize = img_real.ez_resize
   let crop = img_real.crop
   let from_fraction = img_real.from_fraction
+  let triang = img_real.triang -- FIXME: use sqrt here
 
   let mean_filter (border)(ker_n) =
     let x_in: s = from_fraction 1 (ker_n i64.* ker_n)
@@ -315,8 +322,8 @@ module mk_image_real (M: real): image_real
   -- http://www.cs.cmu.edu/~16385/s15/lectures/Lecture3.pdf
   -- See [here](http://paulbourke.net/miscellaneous/imagefilter/)
   -- https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.fourier_gaussian.html
-  let fft_mean_filter (n) =
-    conjugate_fft(mean_filter #edge n)
+  -- let fft_mean_filter (n) =
+    -- conjugate_fft(mean_filter #edge n)
 
   -- see: http://hackage.haskell.org/package/hip-1.5.4.0/docs/Graphics-Image-Processing.html
   -- image rotations + reflections
@@ -324,43 +331,43 @@ module mk_image_real (M: real): image_real
   -- http://www.numerical-tours.com/matlab/denoisingadv_7_rankfilters/
 
   let sobel (border)(x) =
-    let g_x: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
-                         , [ M.from_fraction (-2) 1, M.from_fraction 0 1, M.from_fraction 2 1 ]
-                         , [ M.from_fraction (-1) 1, M.from_fraction 0 1, M.from_fraction 1 1 ]
-                         ]
+    let g_x: [3][3]s = [ [ from_fraction (-1) 1, from_fraction 0 1, from_fraction 1 1 ]
+                       , [ from_fraction (-2) 1, from_fraction 0 1, from_fraction 2 1 ]
+                       , [ from_fraction (-1) 1, from_fraction 0 1, from_fraction 1 1 ]
+                       ]
 
-    let g_y: [3][3]M.t = [ [ M.from_fraction (-1) 1, M.from_fraction (-2) 1, M.from_fraction (-1) 1 ]
-                         , [ M.from_fraction 0 1, M.from_fraction 0 1, M.from_fraction 0 1 ]
-                         , [ M.from_fraction 1 1, M.from_fraction 2 1, M.from_fraction 1 1 ]
-                         ]
+    let g_y: [3][3]s = [ [ from_fraction (-1) 1, from_fraction (-2) 1, from_fraction (-1) 1 ]
+                       , [ from_fraction 0 1, from_fraction 0 1, from_fraction 0 1 ]
+                       , [ from_fraction 1 1, from_fraction 2 1, from_fraction 1 1 ]
+                       ]
 
-    let mag_intermed [m][n] (x: [m][n]M.t) (y: [m][n]M.t) : [m][n]M.t =
+    let mag_intermed [m][n] (x: [m][n]v) (y: [m][n]v) : [m][n]v =
       tabulate_2d m n
-        (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
+        (\i j -> triang (x[i])[j] (y[i])[j])
 
     in mag_intermed (convolve border g_x x) (convolve border g_y x)
 
   let laplacian (border) =
-    let ker: [3][3]M.t = [ [ M.from_fraction 0 1, M.from_fraction (-1) 1, M.from_fraction 0 1 ]
-                         , [ M.from_fraction (-1) 1, M.from_fraction 4 1, M.from_fraction (-1) 1 ]
-                         , [ M.from_fraction 0 1, M.from_fraction (-1) 1, M.from_fraction 0 1 ]
-                         ]
+    let ker: [3][3]s = [ [ from_fraction 0 1, from_fraction (-1) 1, from_fraction 0 1 ]
+                       , [ from_fraction (-1) 1, from_fraction 4 1, from_fraction (-1) 1 ]
+                       , [ from_fraction 0 1, from_fraction (-1) 1, from_fraction 0 1 ]
+                        ]
     in correlate border ker
 
   let prewitt (border)(x) =
-    let g_x: [3][3]M.t = [ [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
-                         , [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
-                         , [ M.from_fraction 1 1, M.from_fraction 0 1, M.from_fraction (-1) 1 ]
-                         ]
+    let g_x: [3][3]s = [ [ from_fraction 1 1, from_fraction 0 1, from_fraction (-1) 1 ]
+                       , [ from_fraction 1 1, from_fraction 0 1, from_fraction (-1) 1 ]
+                       , [ from_fraction 1 1, from_fraction 0 1, from_fraction (-1) 1 ]
+                       ]
 
-    let g_y: [3][3]M.t = [ [ M.from_fraction 1 1, M.from_fraction 1 1, M.from_fraction 1 1 ]
-                         , [ M.from_fraction 0 1, M.from_fraction 0 1, M.from_fraction 0 1 ]
-                         , [ M.from_fraction (-1) 1, M.from_fraction (-1) 1, M.from_fraction (-1) 1 ]
-                         ]
+    let g_y: [3][3]s = [ [ from_fraction 1 1, from_fraction 1 1, from_fraction 1 1 ]
+                       , [ from_fraction 0 1, from_fraction 0 1, from_fraction 0 1 ]
+                       , [ from_fraction (-1) 1, from_fraction (-1) 1, from_fraction (-1) 1 ]
+                       ]
 
-    let mag_intermed [m][n] (x: [m][n]M.t) (y: [m][n]M.t) : [m][n]M.t =
+    let mag_intermed [m][n] (x: [m][n]v) (y: [m][n]v) : [m][n]v =
       tabulate_2d m n
-        (\i j -> M.sqrt ((x[i])[j] M.* (x[i])[j] M.+ (y[i])[j] M.* (y[i])[j]))
+        (\i j -> triang (x[i])[j] (y[i])[j])
 
     in mag_intermed (convolve border g_x x) (convolve border g_y x)
 
@@ -380,9 +387,9 @@ module mk_image_real (M: real): image_real
         M.exp (M.neg rat)
 
     let log_kernel =
-      let three = M.from_fraction 3 1
-      let radius = i64.max 1 (M.to_i64 (three M.* sigma))
-      let dim = 2 * radius + 1
+      let three = from_fraction 3 1
+      let radius = i64.max 1 (to_i64 (three * sigma))
+      let dim = 2 i64.* radius i64.+ 1
       let pre_ker =
         tabulate_2d dim dim
           (\i j ->
@@ -460,7 +467,7 @@ module mk_image_float (M: float)
   let gaussian = img_float.gaussian
   let laplacian = img_float.laplacian
   let laplacian_of_gaussian = img_float.laplacian_of_gaussian
-  let fft_mean_filter = img_float.fft_mean_filter
+  -- let fft_mean_filter = img_float.fft_mean_filter
 
   -- | This is kind of slow.
   let median_filter (border)(n) =
